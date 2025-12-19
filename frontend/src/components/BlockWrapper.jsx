@@ -49,13 +49,14 @@ export default function BlockWrapper({ block, onUpdate, onAddNext, onDelete }) {
         <div
             ref={setNodeRef}
             style={style}
-            className="group flex items-start gap-2 -ml-10 pl-2 pr-2 relative"
+            data-block-id={block.id}
+            className="group flex items-start gap-2 -ml-20 pl-2 pr-2 relative"
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
         >
             {/* Gutter / Controls */}
             <div
-                className={`flex items-center pt-1.5 gap-0.5 absolute left-0 transition-opacity duration-200 ${hover || isDragging ? 'opacity-100' : 'opacity-0'}`}
+                className={`flex items-center pt-1.5 gap-0.5 absolute left-0 w-20 justify-end pr-2 transition-opacity duration-200 z-10 ${hover || isDragging ? 'opacity-100' : 'opacity-0'}`}
                 contentEditable={false} // Make sure controls aren't editable
             >
                 <button
@@ -83,7 +84,7 @@ export default function BlockWrapper({ block, onUpdate, onAddNext, onDelete }) {
             </div>
 
             {/* Block Content */}
-            <div className="flex-grow min-w-0 ml-10">
+            <div className="flex-grow min-w-0 ml-20">
                 {renderContent()}
             </div>
         </div>
