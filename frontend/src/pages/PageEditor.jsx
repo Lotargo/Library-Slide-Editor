@@ -5,6 +5,8 @@ import BlockList from '../components/BlockList';
 import Toolbar from '../components/Toolbar';
 import { DndContext, closestCorners, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove } from '@dnd-kit/sortable';
+import { v4 as uuidv4 } from 'uuid';
+import FloatingMenu from '../components/FloatingMenu';
 
 export default function PageEditor() {
     const { pageId } = useParams();
@@ -42,6 +44,64 @@ export default function PageEditor() {
     const updateBlocks = (newBlocks) => {
         setPage(prev => ({ ...prev, blocks: newBlocks }));
         saveBlocks(newBlocks);
+    };
+
+    const handleConvertToSlide = () => {
+        const selection = window.getSelection();
+        if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
+
+        const range = selection.getRangeAt(0);
+        const getBlockId = (node) => {
+             const el = node.nodeType === 1 ? node : node.parentElement;
+             const blockEl = el.closest('[data-block-id]');
+             return blockEl ? blockEl.getAttribute('data-block-id') : null;
+        };
+
+        const startId = getBlockId(range.startContainer);
+        const endId = getBlockId(range.endContainer);
+
+        if (!startId || !endId) return;
+
+        // Deep clone to mutate
+        const newBlocks = JSON.parse(JSON.stringify(page.blocks));
+
+        const findList = (blocks, id) => {
+            const idx = blocks.findIndex(b => b.id === id);
+            if (idx !== -1) return { list: blocks, index: idx };
+            for (const b of blocks) {
+                if (b.children) {
+                    const res = findList(b.children, id);
+                    if (res) return res;
+                }
+            }
+            return null;
+        };
+
+        const startRes = findList(newBlocks, startId);
+        const endRes = findList(newBlocks, endId);
+
+        if (!startRes || !endRes || startRes.list !== endRes.list) {
+            // Cannot group blocks from different lists
+            return;
+        }
+
+        const minIndex = Math.min(startRes.index, endRes.index);
+        const maxIndex = Math.max(startRes.index, endRes.index);
+        const count = maxIndex - minIndex + 1;
+
+        const blocksToMove = startRes.list.splice(minIndex, count);
+
+        const newSlide = {
+            id: uuidv4(),
+            type: 'slide_wrapper',
+            children: blocksToMove,
+            ratio: '16/9'
+        };
+
+        startRes.list.splice(minIndex, 0, newSlide);
+        updateBlocks(newBlocks);
+
+        selection.removeAllRanges();
     };
 
     // DnD Helpers
@@ -161,7 +221,8 @@ export default function PageEditor() {
             collisionDetection={closestCorners}
             onDragEnd={handleDragEnd}
         >
-            <div className="flex flex-col h-full relative">
+            <div className="flex flex-col h-full relative" id="editor-content-area">
+                <FloatingMenu onConvertToSlide={handleConvertToSlide} />
                 <Toolbar />
                 <div className="flex-1 overflow-y-auto">
                     <div className="max-w-4xl mx-auto px-12 py-16 pb-32 min-h-full bg-white">
