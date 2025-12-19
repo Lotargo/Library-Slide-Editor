@@ -33,16 +33,16 @@
 
 ## 🚀 Запуск проекта
 
-Для запуска локально вам понадобится Python 3.
+Для запуска локально вам понадобится Python 3 и [Poetry](https://python-poetry.org/).
 
 1.  **Установите зависимости**:
     ```bash
-    pip install flask
+    poetry install
     ```
 
 2.  **Запустите сервер**:
     ```bash
-    python3 app.py
+    poetry run python app.py
     ```
 
 3.  **Откройте в браузере**:

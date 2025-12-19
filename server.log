@@ -7,7 +7,5 @@
 [33mPress CTRL+C to quit[0m
  * Restarting with stat
  * Debugger is active!
- * Debugger PIN: 969-355-207
-127.0.0.1 - - [19/Dec/2025 15:16:32] "GET / HTTP/1.1" 200 -
-127.0.0.1 - - [19/Dec/2025 15:16:32] "GET /static/style.css HTTP/1.1" 200 -
-127.0.0.1 - - [19/Dec/2025 15:16:32] "GET /static/script.js HTTP/1.1" 200 -
+ * Debugger PIN: 762-132-329
+127.0.0.1 - - [19/Dec/2025 15:22:14] "GET / HTTP/1.1" 200 -
