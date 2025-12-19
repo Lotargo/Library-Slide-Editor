@@ -11,8 +11,11 @@ def get_db():
         _client = MongoClient(settings.MONGO_URI)
     return _client[settings.MONGO_DB_NAME]
 
-def get_sessions_collection():
-    return get_db()['sessions']
+def get_workspaces_collection():
+    return get_db()['workspaces']
+
+def get_pages_collection():
+    return get_db()['pages']
 
 def get_fonts_collection():
     return get_db()['fonts']
@@ -27,58 +30,97 @@ def serialize_doc(doc):
         doc['updated_at'] = doc['updated_at'].isoformat()
     return doc
 
-# Session Helpers
-def get_all_sessions():
-    """Returns list of sessions with minimal info."""
-    cursor = get_sessions_collection().find({}, {"name": 1, "updated_at": 1, "created_at": 1}).sort("updated_at", -1)
+# Workspace Helpers
+def get_all_workspaces():
+    cursor = get_workspaces_collection().find({}).sort("created_at", -1)
     return [serialize_doc(doc) for doc in cursor]
 
-def get_session(session_id):
-    """Returns full session data."""
-    try:
-        doc = get_sessions_collection().find_one({"_id": ObjectId(session_id)})
-        return serialize_doc(doc)
-    except Exception:
-        return None
-
-def create_session(name, slides=None):
-    if slides is None:
-        slides = []
-
+def create_workspace(name):
     doc = {
         "name": name,
         "created_at": datetime.datetime.utcnow(),
-        "updated_at": datetime.datetime.utcnow(),
-        "slides": slides
+        "updated_at": datetime.datetime.utcnow()
     }
-    res = get_sessions_collection().insert_one(doc)
+    res = get_workspaces_collection().insert_one(doc)
     doc['_id'] = res.inserted_id
     return serialize_doc(doc)
 
-def update_session(session_id, data):
-    """
-    data should contain 'name' and/or 'slides'.
-    """
+def get_workspace(workspace_id):
+    try:
+        doc = get_workspaces_collection().find_one({"_id": ObjectId(workspace_id)})
+        if not doc:
+            return None
+        # Get pages for this workspace
+        pages_cursor = get_pages_collection().find({"workspace_id": str(workspace_id)}, {"title": 1, "updated_at": 1})
+        pages = [serialize_doc(p) for p in pages_cursor]
+        doc = serialize_doc(doc)
+        doc['pages'] = pages
+        return doc
+    except Exception:
+        return None
+
+def update_workspace(workspace_id, data):
     update_fields = {"updated_at": datetime.datetime.utcnow()}
     if 'name' in data:
         update_fields['name'] = data['name']
-    if 'slides' in data:
-        update_fields['slides'] = data['slides']
 
-    get_sessions_collection().update_one(
-        {"_id": ObjectId(session_id)},
+    get_workspaces_collection().update_one(
+        {"_id": ObjectId(workspace_id)},
         {"$set": update_fields}
     )
-    return get_session(session_id)
+    return get_workspace(workspace_id)
 
-def delete_session(session_id):
+def delete_workspace(workspace_id):
     try:
-        get_sessions_collection().delete_one({"_id": ObjectId(session_id)})
+        # Delete workspace
+        get_workspaces_collection().delete_one({"_id": ObjectId(workspace_id)})
+        # Delete pages
+        get_pages_collection().delete_many({"workspace_id": str(workspace_id)})
         return True
     except:
         return False
 
-# Font Helpers
+# Page Helpers
+def create_page(workspace_id, title="Untitled"):
+    doc = {
+        "workspace_id": str(workspace_id),
+        "title": title,
+        "blocks": [], # Initial empty blocks
+        "created_at": datetime.datetime.utcnow(),
+        "updated_at": datetime.datetime.utcnow()
+    }
+    res = get_pages_collection().insert_one(doc)
+    doc['_id'] = res.inserted_id
+    return serialize_doc(doc)
+
+def get_page(page_id):
+    try:
+        doc = get_pages_collection().find_one({"_id": ObjectId(page_id)})
+        return serialize_doc(doc)
+    except:
+        return None
+
+def update_page(page_id, data):
+    update_fields = {"updated_at": datetime.datetime.utcnow()}
+    if 'title' in data:
+        update_fields['title'] = data['title']
+    if 'blocks' in data:
+        update_fields['blocks'] = data['blocks']
+
+    get_pages_collection().update_one(
+        {"_id": ObjectId(page_id)},
+        {"$set": update_fields}
+    )
+    return get_page(page_id)
+
+def delete_page(page_id):
+    try:
+        get_pages_collection().delete_one({"_id": ObjectId(page_id)})
+        return True
+    except:
+        return False
+
+# Font Helpers (Unchanged essentially)
 def save_font_metadata(name, filename):
     doc = {
         "name": name,

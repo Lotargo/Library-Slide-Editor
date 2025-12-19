@@ -3,7 +3,15 @@ from . import views
 
 urlpatterns = [
     path('', views.index, name='index'),
-    path('api/sessions', views.api_sessions, name='api_sessions'),
-    path('api/sessions/<str:session_id>', views.api_session_detail, name='api_session_detail'),
+
+    # Workspace API
+    path('api/workspaces', views.api_workspaces, name='api_workspaces'),
+    path('api/workspaces/<str:workspace_id>', views.api_workspace_detail, name='api_workspace_detail'),
+    path('api/workspaces/<str:workspace_id>/pages', views.api_workspace_pages, name='api_workspace_pages'),
+
+    # Page API
+    path('api/pages/<str:page_id>', views.api_page_detail, name='api_page_detail'),
+
+    # Fonts API
     path('api/fonts', views.api_fonts, name='api_fonts'),
 ]
