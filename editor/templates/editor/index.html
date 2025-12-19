@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css" rel="stylesheet">
     <link rel="stylesheet" href="{% static 'editor/css/style.css' %}">
 
     <script type="module">
@@ -23,14 +24,14 @@
         <aside id="sidebar" class="sidebar">
             <div class="sidebar-header">
                 <h3>Sessions</h3>
-                <button id="toggle-sidebar-btn" class="icon-btn">&times;</button>
+                <button id="toggle-sidebar-btn" class="icon-btn"><i class="ri-close-line"></i></button>
             </div>
-            <button id="new-session-btn" class="primary-btn">+ New Session</button>
+            <button id="new-session-btn" class="primary-btn"><i class="ri-add-line"></i> New Session</button>
             <ul id="session-list"></ul>
         </aside>
 
         <!-- Toggle Sidebar Button (Visible when sidebar hidden) -->
-        <button id="show-sidebar-btn" class="icon-btn floating-sidebar-btn" style="display:none;">☰</button>
+        <button id="show-sidebar-btn" class="icon-btn floating-sidebar-btn" style="display:none;"><i class="ri-menu-line"></i></button>
 
         <!-- Main Content -->
         <main id="main-content">
@@ -43,7 +44,7 @@
                         <option value="monospace">Monospace</option>
                      </select>
                      <label class="file-upload-btn" title="Upload Font">
-                        <span>+</span>
+                        <i class="ri-upload-2-line"></i>
                         <input type="file" id="font-upload" accept=".ttf,.otf,.woff,.woff2">
                      </label>
                  </div>
@@ -51,8 +52,8 @@
                  <div class="toolbar-separator"></div>
 
                  <div class="toolbar-group">
-                     <button id="bold-btn" class="toolbar-btn"><b>B</b></button>
-                     <button id="italic-btn" class="toolbar-btn"><i>I</i></button>
+                     <button id="bold-btn" class="toolbar-btn"><i class="ri-bold"></i></button>
+                     <button id="italic-btn" class="toolbar-btn"><i class="ri-italic"></i></button>
                      <input type="number" id="font-size-input" class="toolbar-input" value="16" min="8" max="120">
                      <span class="unit">px</span>
                  </div>
@@ -60,7 +61,7 @@
                  <div class="toolbar-separator"></div>
 
                  <div class="toolbar-group">
-                     <button id="save-btn" class="primary-btn">Save</button>
+                     <button id="save-btn" class="primary-btn"><i class="ri-save-line"></i> Save</button>
                      <span id="save-status"></span>
                  </div>
             </div>
@@ -72,7 +73,7 @@
                 </div>
 
                 <div class="add-slide-area">
-                    <button id="add-slide-btn" class="secondary-btn">+ Add Slide</button>
+                    <button id="add-slide-btn" class="secondary-btn"><i class="ri-add-circle-line"></i> Add Slide</button>
                 </div>
             </div>
         </main>
@@ -82,7 +83,7 @@
     <template id="slide-template">
         <div class="slide-wrapper">
             <div class="slide-controls">
-                <span class="slide-label">Slide</span>
+                <div class="slide-drag-handle"><i class="ri-drag-move-2-line"></i></div>
                 <select class="aspect-ratio-select">
                     <option value="16/9">16:9</option>
                     <option value="4/3">4:3</option>
@@ -90,15 +91,16 @@
                     <option value="9/16">9:16</option>
                     <option value="auto">Auto Height</option>
                 </select>
-                <button class="delete-slide-btn" title="Delete Slide">🗑</button>
-                <button class="export-slide-btn" title="Export Image">⬇ PNG</button>
+                <div class="spacer"></div>
+                <button class="icon-btn-small export-slide-btn" title="Export Image"><i class="ri-download-line"></i></button>
+                <button class="icon-btn-small delete-slide-btn" title="Delete Slide"><i class="ri-delete-bin-line"></i></button>
             </div>
             <div class="slide-content">
                 <!-- Blocks go here -->
             </div>
             <div class="slide-add-block">
-                <button class="add-text-btn small-btn">+ Text</button>
-                <button class="add-mermaid-btn small-btn">+ Diagram</button>
+                <button class="add-text-btn small-btn"><i class="ri-text"></i> Text</button>
+                <button class="add-mermaid-btn small-btn"><i class="ri-flow-chart"></i> Diagram</button>
             </div>
         </div>
     </template>
