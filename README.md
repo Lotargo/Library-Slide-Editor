@@ -1,57 +1,47 @@
-# Генератор карточек и Сайт-визитка
+# Workspace & Slide Editor
 
-![Project Preview](static/project_preview.png)
+A powerful Notion-like workspace platform that combines infinite-canvas document editing with presentation slide capabilities.
 
-Проект представляет собой интерактивный сайт-визитку с функцией генерации контента для социальных сетей. Основная задача — предоставить удобный интерфейс для чтения информации об услугах и мгновенного экспорта отдельных блоков в формате **1:1 (квадрат)** для Instagram, VK, Avito и других платформ.
+## 🚀 Features
 
-## ✨ Возможности
+*   **Unified Workspaces**: Organize your work into Workspaces and Pages.
+*   **Hybrid Editor**:
+    *   **Document Mode**: Infinite vertical scroll for writing and planning.
+    *   **Slide Mode**: Wrap any content into a "Slide" block with fixed aspect ratios (16:9, 4:3, 1:1) for easy export as images.
+*   **Rich Blocks**:
+    *   Text, Headings, Lists.
+    *   **Tables**: Database-like tables.
+    *   **Boards**: Kanban boards for task management.
+    *   **Calendars**: Event planning.
+    *   **Galleries**: Image grids.
+*   **Focus Mode**: Hideable toolbar for distraction-free writing.
 
-*   **Минималистичный дизайн**: Чистый стиль, вдохновленный эстетикой OpenAI/Inter font.
-*   **Генерация изображений**: Каждая секция сайта имеет кнопку "Сохранить как изображение".
-*   **Формат 1:1**: Скрипт автоматически трансформирует контент блока в идеальный квадрат 1080x1080px, центрирует текст и увеличивает шрифты для читаемости на мобильных устройствах.
-*   **Диаграмма**: Визуализация процесса работы (Идея → Рабочий сервис).
+## 🛠 Tech Stack
 
-## 🛠 Технологии и Методология
+*   **Backend**: Python, Django, MongoDB (pymongo).
+*   **Frontend**: React, Vite.
 
-### Архитектура
-Проект построен на **Flask** (Python) для серверной части, но основная магия происходит на фронтенде.
+## 📦 Installation & Development
 
-1.  **Backend (Flask)**:
-    *   Служит для отдачи статики и шаблонов.
-    *   Легковесный, легко разворачивается на любом хостинге (Vercel, Railway, VPS).
-
-2.  **Frontend (HTML/CSS)**:
-    *   Используется шрифт **Inter** для современной типографики.
-    *   CSS Variables для легкой смены цветовой темы.
-    *   Верстка адаптивная, но для экспорта используется отдельный набор стилей.
-
-3.  **Экспорт (JS + html2canvas)**:
-    *   Мы не генерируем картинки на сервере. Вместо этого используется библиотека `html2canvas`.
-    *   **Методология "Shadow Render"**: При клике на кнопку контент клонируется в скрытый контейнер (`.export-frame`), к которому применяются специальные стили (фиксированный размер 1080px, огромные шрифты, центрирование).
-    *   Этот скрытый контейнер рендерится в Canvas, а затем скачивается как PNG.
-    *   Это гарантирует, что картинка всегда будет идеального качества и пропорций, независимо от того, с какого устройства зашел пользователь.
-
-## 🚀 Запуск проекта
-
-Для запуска локально вам понадобится Python 3 и [Poetry](https://python-poetry.org/).
-
-1.  **Установите зависимости**:
+1.  **Backend Setup**:
     ```bash
     poetry install
+    # Start MongoDB (ensure it's running)
+    poetry run python manage.py runserver
     ```
 
-2.  **Запустите сервер**:
+2.  **Frontend Setup**:
     ```bash
-    poetry run python app.py
+    cd frontend
+    npm install
+    npm run dev  # For development
+    # OR
+    npm run build # To build for Django
     ```
 
-3.  **Откройте в браузере**:
-    Перейдите по адресу `http://127.0.0.1:5000`
+## 🏗 Architecture
 
-## 🎨 Кастомизация
-
-Все стили находятся в `static/style.css`.
-*   `.card` — стили отображения на сайте.
-*   `.export-frame` — стили для экспортируемой картинки.
-
-Изменяя `.export-frame`, вы можете полностью поменять дизайн генерируемых карточек, не затрагивая основной вид сайта.
+The project is a Django application serving a React SPA.
+*   **Django (`dj_cards/`, `editor/`)**: Provides the REST API and serves the main HTML shell.
+*   **React (`frontend/`)**: Handles all UI logic, state management, and the block editor.
+*   **MongoDB**: Stores flexible document structures for pages and blocks.
