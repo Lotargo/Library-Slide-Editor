@@ -21,15 +21,15 @@ if exist poetry.lock (
 
 REM Migrations
 echo Applying migrations...
-python manage.py migrate
+poetry run python manage.py migrate
 
 REM Init Data
 echo Initializing default session...
-python manage.py init_data
+poetry run python manage.py init_data
 
 REM Start Server
 echo Starting Django server...
 echo Open http://127.0.0.1:8000 in your browser.
-python manage.py runserver
+poetry run python manage.py runserver
 
 pause

@@ -53,7 +53,7 @@ DATABASES = {
     }
 }
 
-MONGO_URI = os.environ.get("MONGO_URI", "mongodb://shared-mongo:27017")
+MONGO_URI = os.environ.get("MONGO_URI", "mongodb://localhost:27017")
 MONGO_DB_NAME = "dj_cards_db"
 
 AUTH_PASSWORD_VALIDATORS = [
