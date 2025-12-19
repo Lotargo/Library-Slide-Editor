@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+{% load static %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Card Editor</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'editor/css/style.css' %}">
+
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: false });
+        window.mermaid = mermaid;
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <div id="app">
+        <!-- Sidebar -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <h3>Sessions</h3>
+                <button id="toggle-sidebar-btn" class="icon-btn">&times;</button>
+            </div>
+            <button id="new-session-btn" class="primary-btn">+ New Session</button>
+            <ul id="session-list"></ul>
+        </aside>
+
+        <!-- Toggle Sidebar Button (Visible when sidebar hidden) -->
+        <button id="show-sidebar-btn" class="icon-btn floating-sidebar-btn" style="display:none;">☰</button>
+
+        <!-- Main Content -->
+        <main id="main-content">
+            <!-- Toolbar -->
+            <div id="toolbar" class="toolbar">
+                 <div class="toolbar-group">
+                     <select id="font-family-select" class="toolbar-select">
+                        <option value="Inter, sans-serif">Inter (Default)</option>
+                        <option value="serif">Serif</option>
+                        <option value="monospace">Monospace</option>
+                     </select>
+                     <label class="file-upload-btn" title="Upload Font">
+                        <span>+</span>
+                        <input type="file" id="font-upload" accept=".ttf,.otf,.woff,.woff2">
+                     </label>
+                 </div>
+
+                 <div class="toolbar-separator"></div>
+
+                 <div class="toolbar-group">
+                     <button id="bold-btn" class="toolbar-btn"><b>B</b></button>
+                     <button id="italic-btn" class="toolbar-btn"><i>I</i></button>
+                     <input type="number" id="font-size-input" class="toolbar-input" value="16" min="8" max="120">
+                     <span class="unit">px</span>
+                 </div>
+
+                 <div class="toolbar-separator"></div>
+
+                 <div class="toolbar-group">
+                     <button id="save-btn" class="primary-btn">Save</button>
+                     <span id="save-status"></span>
+                 </div>
+            </div>
+
+            <!-- Editor Area -->
+            <div id="editor-scroller">
+                <div id="editor-container">
+                    <!-- Slides rendered here -->
+                </div>
+
+                <div class="add-slide-area">
+                    <button id="add-slide-btn" class="secondary-btn">+ Add Slide</button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Templates for JS -->
+    <template id="slide-template">
+        <div class="slide-wrapper">
+            <div class="slide-controls">
+                <span class="slide-label">Slide</span>
+                <select class="aspect-ratio-select">
+                    <option value="16/9">16:9</option>
+                    <option value="4/3">4:3</option>
+                    <option value="1/1">1:1</option>
+                    <option value="9/16">9:16</option>
+                    <option value="auto">Auto Height</option>
+                </select>
+                <button class="delete-slide-btn" title="Delete Slide">🗑</button>
+                <button class="export-slide-btn" title="Export Image">⬇ PNG</button>
+            </div>
+            <div class="slide-content">
+                <!-- Blocks go here -->
+            </div>
+            <div class="slide-add-block">
+                <button class="add-text-btn small-btn">+ Text</button>
+                <button class="add-mermaid-btn small-btn">+ Diagram</button>
+            </div>
+        </div>
+    </template>
+
+    <script src="{% static 'editor/js/app.js' %}"></script>
+</body>
+</html>
