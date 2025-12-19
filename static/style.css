@@ -275,24 +275,22 @@ p.large-text {
 }
 
 /* Diagram in Export */
+/* Optimized for 1080x1080 square export */
 .export-frame .diagram-container {
-    flex-direction: column; /* Keep vertical for square, or horizontal? */
-    /* Let's try horizontal for the export if it fits, or vertical */
-    /* Vertical stack is safer for mobile viewing, but on a big square, horizontal might look cool */
-    /* Let's stick to vertical as per the placeholder, it fills the vertical space better */
-    gap: 32px;
+    flex-direction: column;
+    gap: 20px; /* Reduced gap to fit 5 steps + arrows */
 }
 
 .export-frame .d-step {
-    font-size: 40px;
-    padding: 24px 48px;
+    font-size: 32px; /* Slightly smaller font */
+    padding: 20px 40px; /* Reduced padding */
     border-width: 3px;
     border-radius: 16px;
     min-width: 250px;
 }
 
 .export-frame .d-arrow {
-    font-size: 48px;
+    font-size: 36px; /* Smaller arrows */
     color: #ccc;
     transform: rotate(90deg);
 }
