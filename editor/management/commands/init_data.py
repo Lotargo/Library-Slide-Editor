@@ -1,15 +1,24 @@
 from django.core.management.base import BaseCommand
-from editor.utils.mongo import create_session, get_all_sessions
+from editor.utils.mongo import create_workspace, create_page, get_all_workspaces, update_page
+import uuid
 
 class Command(BaseCommand):
-    help = 'Initialize default session data'
+    help = 'Initialize default data (Workspace and Page)'
 
     def handle(self, *args, **kwargs):
-        if len(get_all_sessions()) > 0:
-            self.stdout.write('Sessions already exist.')
+        if len(get_all_workspaces()) > 0:
+            self.stdout.write('Workspaces already exist.')
             return
 
-        slides = [
+        # Create Workspace
+        ws = create_workspace("Default Workspace")
+        self.stdout.write(f"Created workspace: {ws['id']}")
+
+        # Create Page
+        page = create_page(ws['id'], "Welcome")
+        self.stdout.write(f"Created page: {page['id']}")
+
+        slides_data = [
             {
                 "ratio": "16/9",
                 "blocks": [
@@ -48,5 +57,24 @@ class Command(BaseCommand):
             }
         ]
 
-        create_session("Default Session", slides)
-        self.stdout.write(self.style.SUCCESS('Successfully created default session'))
+        blocks = []
+        for slide in slides_data:
+            slide_blocks = []
+            for b in slide['blocks']:
+                slide_blocks.append({
+                    "id": str(uuid.uuid4()),
+                    "type": b['type'],
+                    "content": b['content']
+                })
+
+            blocks.append({
+                "id": str(uuid.uuid4()),
+                "type": "slide_wrapper",
+                "ratio": slide.get("ratio", "16/9"),
+                "children": slide_blocks
+            })
+
+        # Update Page
+        update_page(page['id'], {"blocks": blocks})
+
+        self.stdout.write(self.style.SUCCESS('Successfully initialized default data'))

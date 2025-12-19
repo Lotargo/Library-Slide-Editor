@@ -25,8 +25,15 @@ A powerful Notion-like workspace platform that combines infinite-canvas document
 
 1.  **Backend Setup**:
     ```bash
-    poetry install
-    # Start MongoDB (ensure it's running)
+    # Setup infrastructure (Docker login, MongoDB start, install dependencies)
+    ./setup_infra.sh   # Linux/Mac
+    # OR
+    setup_infra.bat    # Windows
+
+    # Initialize Default Data
+    poetry run python manage.py init_data
+
+    # Start Server
     poetry run python manage.py runserver
     ```
 

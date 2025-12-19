@@ -1,11 +1,9 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import { v4 as uuidv4 } from 'uuid';
+import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import BlockWrapper from './BlockWrapper';
 
-export default function BlockList({ blocks, onChange }) {
-
-    // Ensure there's always at least one block if the page is empty?
-    // Notion allows completely empty pages, but clicking usually creates a block.
+export default function BlockList({ blocks, onChange, listId = 'root' }) {
 
     const updateBlock = (id, updates) => {
         const newBlocks = blocks.map(b => b.id === id ? { ...b, ...updates } : b);
@@ -41,22 +39,24 @@ export default function BlockList({ blocks, onChange }) {
     }
 
     return (
-        <div className="space-y-2">
-            {blocks.map(block => (
-                <BlockWrapper
-                    key={block.id}
-                    block={block}
-                    onUpdate={(updates) => updateBlock(block.id, updates)}
-                    onAddNext={() => addBlock(block.id)}
-                    onDelete={() => deleteBlock(block.id)}
-                />
-            ))}
+        <SortableContext items={blocks.map(b => b.id)} strategy={verticalListSortingStrategy} id={listId}>
+            <div className="space-y-2">
+                {blocks.map(block => (
+                    <BlockWrapper
+                        key={block.id}
+                        block={block}
+                        onUpdate={(updates) => updateBlock(block.id, updates)}
+                        onAddNext={() => addBlock(block.id)}
+                        onDelete={() => deleteBlock(block.id)}
+                    />
+                ))}
 
-            {/* Click area at bottom to append */}
-            <div
-                className="h-32 cursor-text"
-                onClick={() => addBlock(blocks[blocks.length-1].id)}
-            ></div>
-        </div>
+                {/* Click area at bottom to append */}
+                <div
+                    className="h-32 cursor-text"
+                    onClick={() => addBlock(blocks[blocks.length-1].id)}
+                ></div>
+            </div>
+        </SortableContext>
     );
 }

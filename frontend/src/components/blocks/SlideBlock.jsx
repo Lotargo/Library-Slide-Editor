@@ -36,7 +36,7 @@ export default function SlideBlock({ block, onUpdate }) {
                         style={{ aspectRatio: ratioStyle }}
                      >
                         <div className="p-8 flex-1 overflow-y-auto custom-scrollbar">
-                            <BlockList blocks={block.children || []} onChange={handleChildrenChange} />
+                            <BlockList blocks={block.children || []} onChange={handleChildrenChange} listId={block.id} />
                         </div>
                      </div>
                 </div>
