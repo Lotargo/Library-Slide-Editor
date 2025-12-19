@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Разработка сервисов и автоматизации</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+</head>
+<body>
+    <div class="main-wrapper">
+
+        <!-- Intro Slide -->
+        <section class="card" id="card-intro">
+            <div class="card-content">
+                <h1>Разработка сервисов, платформ и автоматизации под ваши задачи</h1>
+                <p class="subtitle">Помогаю превращать идеи и бизнес-задачи в работающие цифровые решения — от простых ботов до полноценных сервисов и платформ с расчётом на рост.</p>
+                <p>Если у вас есть мысль, процесс или идея, на которых вы хотите зарабатывать или которые нужно автоматизировать — я беру на себя техническую реализацию и архитектуру.</p>
+            </div>
+            <div class="card-actions">
+                <button class="export-btn" onclick="exportCard('card-intro')">Сохранить как изображение</button>
+            </div>
+        </section>
+
+        <!-- Capabilities Slide -->
+        <section class="card" id="card-capabilities">
+            <div class="card-content">
+                <h2>Что могу создать</h2>
+                <ul class="styled-list">
+                    <li>Чат-ботов и сервисы для общения с клиентами</li>
+                    <li>Системы записи, обработки заявок и автоматизации</li>
+                    <li>Серверную часть и backend под конкретные задачи</li>
+                    <li>Онлайн-сервисы и SaaS-решения</li>
+                    <li>Проекты с умными помощниками и консультантами</li>
+                    <li>Архитектуру, рассчитанную на нагрузку, масштабирование и развитие</li>
+                </ul>
+            </div>
+            <div class="card-actions">
+                <button class="export-btn" onclick="exportCard('card-capabilities')">Сохранить как изображение</button>
+            </div>
+        </section>
+
+        <!-- Examples Slide -->
+        <section class="card" id="card-examples">
+            <div class="card-content">
+                <h2>Примеры проектов</h2>
+                <ul class="styled-list">
+                    <li><strong>Сервис помощи в учебных работах:</strong> структурирование текста, проверка на AI, сверка фактов и источников.</li>
+                    <li><strong>Платформа для студий и авторов:</strong> генерация изображений и видео по заданным правилам и стилям.</li>
+                    <li><strong>Умные помощники для бизнеса:</strong> консультации, приём заявок, поддержка клиентов.</li>
+                    <li><strong>MVP и сервисы:</strong> проверка бизнес-идей с возможностью дальнейшего роста.</li>
+                </ul>
+            </div>
+            <div class="card-actions">
+                <button class="export-btn" onclick="exportCard('card-examples')">Сохранить как изображение</button>
+            </div>
+        </section>
+
+        <!-- Approach Slide -->
+        <section class="card" id="card-approach">
+            <div class="card-content">
+                <h2>Подход к работе</h2>
+                <p>Я делаю так, чтобы проект не пришлось переделывать с нуля через несколько месяцев.</p>
+                <h3>Как я работаю:</h3>
+                <ul class="styled-list">
+                    <li>Разбираюсь в задаче и целях</li>
+                    <li>Предлагаю архитектуру и подход</li>
+                    <li>Реализую и довожу до рабочего состояния</li>
+                    <li>Передаю исходный код и объясняю, как с ним работать</li>
+                </ul>
+            </div>
+            <div class="card-actions">
+                <button class="export-btn" onclick="exportCard('card-approach')">Сохранить как изображение</button>
+            </div>
+        </section>
+
+        <!-- Terms Slide -->
+        <section class="card" id="card-terms">
+            <div class="card-content">
+                <h2>Условия</h2>
+                <ul class="styled-list">
+                    <li>Цены индивидуальные, без фиксированных прайсов</li>
+                    <li>Работаю с коммерческими и личными проектами</li>
+                    <li>Не требую долю в бизнесе и не навязываю партнёрство</li>
+                    <li>Возможна скидка, если проект интересный и нестандартный</li>
+                    <li>За «спасибо», бартер и обещания не работаю</li>
+                </ul>
+            </div>
+            <div class="card-actions">
+                <button class="export-btn" onclick="exportCard('card-terms')">Сохранить как изображение</button>
+            </div>
+        </section>
+
+        <!-- Payment Slide -->
+        <section class="card" id="card-payment">
+            <div class="card-content">
+                <h2>Оплата</h2>
+                <div class="payment-block">
+                    <div class="payment-item">
+                        <span class="percent">50%</span>
+                        <span class="desc">предоплата перед началом</span>
+                    </div>
+                    <div class="payment-item">
+                        <span class="percent">50%</span>
+                        <span class="desc">после сдачи проекта и передачи исходного кода</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-actions">
+                <button class="export-btn" onclick="exportCard('card-payment')">Сохранить как изображение</button>
+            </div>
+        </section>
+
+        <!-- CTA Slide -->
+        <section class="card" id="card-cta">
+            <div class="card-content">
+                <p class="large-text">Если вы понимаете, что хотите сделать, но не знаете, как это правильно реализовать технически — это моя зона ответственности.</p>
+            </div>
+            <div class="card-actions">
+                <button class="export-btn" onclick="exportCard('card-cta')">Сохранить как изображение</button>
+            </div>
+        </section>
+
+         <!-- Diagram Slide -->
+         <section class="card" id="card-diagram">
+            <div class="card-content center-content">
+                <div class="diagram-container">
+                    <div class="d-step">Идея</div>
+                    <div class="d-arrow">→</div>
+                    <div class="d-step">Сомнения</div>
+                    <div class="d-arrow">→</div>
+                    <div class="d-step">Хаос</div>
+                    <div class="d-arrow">→</div>
+                    <div class="d-step">Понимание</div>
+                    <div class="d-arrow">→</div>
+                    <div class="d-step highlight">Рабочий сервис</div>
+                </div>
+            </div>
+            <div class="card-actions">
+                <button class="export-btn" onclick="exportCard('card-diagram')">Сохранить как изображение</button>
+            </div>
+        </section>
+
+    </div>
+
+    <!-- Hidden container for export generation -->
+    <div id="export-container-wrapper" style="position: absolute; left: -9999px; top: -9999px;"></div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
