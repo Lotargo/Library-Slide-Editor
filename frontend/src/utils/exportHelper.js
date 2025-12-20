@@ -1,7 +1,7 @@
 import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 
-// Helper for single slide export (unchanged)
+// Helper for single slide export (unchanged logic for non-cloned approach, though we are moving away from it)
 const getBoundingBox = (node) => {
     const rect = node.getBoundingClientRect();
     let minX = rect.left;
@@ -76,31 +76,48 @@ const prepareClone = (node) => {
     clone.style.minHeight = 'auto';
     clone.style.overflow = 'visible';
     clone.style.maxHeight = 'none';
+    clone.style.aspectRatio = 'unset'; // Important for slides
 
-    // 2. Expand Slides
-    // Looking for elements that match the slide pattern.
-    // In SlideBlock.jsx: id={`slide-content-${block.id}`}
-    const slides = clone.querySelectorAll('[id^="slide-content-"]');
-    slides.forEach(slide => {
-        // Remove aspect ratio constraint
-        slide.style.aspectRatio = 'unset';
-        slide.style.height = 'auto';
-        slide.style.maxHeight = 'none';
+    // Helper to expand a slide element (remove aspect ratio and scroll)
+    const expandSlide = (el) => {
+        el.style.aspectRatio = 'unset';
+        el.style.height = 'auto';
+        el.style.maxHeight = 'none';
+        el.style.overflow = 'visible';
 
         // Find the inner scroller.
         // Based on SlideBlock.jsx: <div className="... overflow-y-auto ...">
-        const scrollers = slide.querySelectorAll('.overflow-y-auto');
+        // We match any element with overflow-y-auto or custom-scrollbar class
+        const scrollers = el.querySelectorAll('.overflow-y-auto, .custom-scrollbar');
         scrollers.forEach(scroller => {
             scroller.style.overflow = 'visible';
             scroller.style.height = 'auto';
             scroller.style.maxHeight = 'none';
         });
+    };
+
+    // 2. Expand Slides inside the clone (if node is a wrapper/page)
+    const slides = clone.querySelectorAll('[id^="slide-content-"]');
+    slides.forEach(expandSlide);
+
+    // 3. Check if the root itself is a slide
+    if (node.id && node.id.startsWith('slide-content-')) {
+        expandSlide(clone);
+    }
+
+    // 4. Fallback: just find any scrollable container and expand it
+    // This covers cases where the structure might be slightly different
+    const allScrollers = clone.querySelectorAll('.overflow-y-auto');
+    allScrollers.forEach(scroller => {
+        scroller.style.overflow = 'visible';
+        scroller.style.height = 'auto';
+        scroller.style.maxHeight = 'none';
     });
 
     return { container, clone };
 };
 
-const captureCanvasViaClone = async (originalNode) => {
+const captureViaClone = async (originalNode) => {
     const { container, clone } = prepareClone(originalNode);
 
     // Force reflow
@@ -111,9 +128,6 @@ const captureCanvasViaClone = async (originalNode) => {
     const height = clone.scrollHeight;
 
     // Ensure images are loaded in the clone
-    // Since we cloned deep, the src attributes are there.
-    // Browsers might re-request them or use cache.
-    // We should wait a moment for the DOM to settle and images to be "ready".
     const images = clone.querySelectorAll('img');
     const imagePromises = Array.from(images).map(img => {
         if (img.complete) return Promise.resolve();
@@ -132,7 +146,7 @@ const captureCanvasViaClone = async (originalNode) => {
             backgroundColor: '#ffffff',
             width: width,
             height: height,
-            cacheBust: true, // Forces reload if needed, can help with stale/missing images
+            cacheBust: true,
         });
         return { dataUrl, width, height };
     } finally {
@@ -150,7 +164,8 @@ export const exportSlideToPng = async (elementId, filename = 'slide') => {
     }
 
     try {
-        const result = await captureFitContent(node);
+        // Now using cloning strategy for slides too to avoid scrollbars
+        const result = await captureViaClone(node);
         const link = document.createElement('a');
         link.download = `${filename}.png`;
         link.href = result.dataUrl;
@@ -169,8 +184,7 @@ export const exportCanvasToPng = async (elementId, filename = 'canvas') => {
     }
 
     try {
-        // Use the new cloning method
-        const result = await captureCanvasViaClone(node);
+        const result = await captureViaClone(node);
         const link = document.createElement('a');
         link.download = `${filename}.png`;
         link.href = result.dataUrl;
@@ -186,13 +200,8 @@ export const exportToPdf = async (elementId, filename = 'export', type = 'slide'
     if (!node) return;
 
     try {
-        let result;
-        if (type === 'page' || type === 'canvas') {
-            // Use the new cloning method for PDF canvas export as well
-            result = await captureCanvasViaClone(node);
-        } else {
-            result = await captureFitContent(node);
-        }
+        // Always use captureViaClone to ensure full content is captured without scrollbars
+        const result = await captureViaClone(node);
 
         const { dataUrl, width, height } = result;
 

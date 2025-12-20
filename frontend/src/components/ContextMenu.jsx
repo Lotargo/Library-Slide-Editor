@@ -65,7 +65,7 @@ export default function ContextMenu() {
         const isImage = mimeType.startsWith('image/');
         let html = '';
         if (isImage) {
-             html = `<img src="${url}" alt="${filename}" style="max-width: 100%; height: auto; display: block; margin: 0.5rem 0;" />`;
+             html = `<img src="${url}" alt="${filename}" style="max-width: 100%; height: auto; display: block; margin: 0.5rem auto;" />`;
         } else {
              html = `<a href="${url}" target="_blank" class="text-blue-600 underline hover:text-blue-800 mx-1 inline-flex items-center gap-1 bg-gray-50 px-1 rounded border border-gray-200" contenteditable="false"><span class="opacity-70">📄</span>${filename}</a>`;
         }
