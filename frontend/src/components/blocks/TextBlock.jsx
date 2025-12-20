@@ -117,8 +117,8 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
                  const range = selection.getRangeAt(0);
                  const selectedText = range.toString();
 
-                 // Wrap in code tag with style
-                 const codeHtml = `<code style="color: #e83e8c; background-color: rgba(0,0,0,0.05); border-radius: 3px; padding: 0 2px; font-family: monospace;">${escapeHtml(selectedText)}</code>`;
+                 // Wrap in code tag with style and pointer cursor
+                 const codeHtml = `<code style="color: #e83e8c; background-color: rgba(0,0,0,0.05); border-radius: 3px; padding: 0 2px; font-family: monospace; cursor: pointer;">${escapeHtml(selectedText)}</code>`;
                  document.execCommand('insertHTML', false, codeHtml);
                  return;
              }
@@ -193,7 +193,7 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
                  if (codeMatch) {
                      e.preventDefault();
                      const content = codeMatch[1];
-                     const codeHtml = `<code style="color: #e83e8c; background-color: rgba(0,0,0,0.05); border-radius: 3px; padding: 0 2px; font-family: monospace;">${escapeHtml(content)}</code>`;
+                     const codeHtml = `<code style="color: #e83e8c; background-color: rgba(0,0,0,0.05); border-radius: 3px; padding: 0 2px; font-family: monospace; cursor: pointer;">${escapeHtml(content)}</code>`;
 
                      // Custom replace logic for HTML insertion
                      const newRange = document.createRange();
@@ -302,9 +302,31 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
             .replace(/\*([^\*]+)\*/g, '<i>$1</i>')
             .replace(/_([^_]+)_/g, '<i>$1</i>')
             .replace(/~~([^~]+)~~/g, '<s>$1</s>')
-            .replace(/`([^`]+)`/g, '<code style="color: #e83e8c; background-color: rgba(0,0,0,0.05); border-radius: 3px; padding: 0 2px; font-family: monospace;">$1</code>');
+            .replace(/`([^`]+)`/g, '<code style="color: #e83e8c; background-color: rgba(0,0,0,0.05); border-radius: 3px; padding: 0 2px; font-family: monospace; cursor: pointer;">$1</code>');
 
         document.execCommand('insertHTML', false, processed);
+    };
+
+    const handleClick = (e) => {
+        if (e.target.tagName === 'CODE') {
+             const text = e.target.innerText;
+             navigator.clipboard.writeText(text).then(() => {
+                 const originalBg = e.target.style.backgroundColor;
+                 const originalTransition = e.target.style.transition;
+
+                 e.target.style.transition = 'background-color 0.2s ease';
+                 e.target.style.backgroundColor = '#86efac'; // light green
+
+                 setTimeout(() => {
+                     e.target.style.backgroundColor = originalBg;
+                     setTimeout(() => {
+                        e.target.style.transition = originalTransition;
+                     }, 200);
+                 }, 500);
+             }).catch(err => {
+                 console.error("Failed to copy:", err);
+             });
+        }
     };
 
     return (
@@ -317,6 +339,7 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
                 onInput={handleInput}
                 onKeyDown={handleKeyDown}
                 onPaste={handlePaste}
+                onClick={handleClick}
                 placeholder="Type '/' for commands"
             />
             {showMenu && filteredItems.length > 0 && (

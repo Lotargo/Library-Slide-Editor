@@ -43,3 +43,13 @@ Watching for file changes with StatReloader
 [20/Dec/2025 21:19:20] "GET /api/workspaces HTTP/1.1" 200 588
 [20/Dec/2025 21:19:20] "GET /api/workspaces/694712d8af44fd2f02768de7 HTTP/1.1" 200 254
 [20/Dec/2025 21:19:20] "GET /api/workspaces/694712d8af44fd2f02768de7 HTTP/1.1" 200 254
+[20/Dec/2025 21:32:20] "POST /api/workspaces HTTP/1.1" 200 146
+[20/Dec/2025 21:32:20] "GET /api/workspaces HTTP/1.1" 200 736
+[20/Dec/2025 21:32:20] "GET /api/workspaces HTTP/1.1" 200 736
+[20/Dec/2025 21:32:21] "POST /api/workspaces/694715e4af44fd2f02768de9/pages HTTP/1.1" 200 207
+[20/Dec/2025 21:32:21] "GET /api/workspaces HTTP/1.1" 200 736
+[20/Dec/2025 21:32:21] "GET /api/pages/694715e5af44fd2f02768dea HTTP/1.1" 200 207
+[20/Dec/2025 21:32:21] "GET /api/pages/694715e5af44fd2f02768dea HTTP/1.1" 200 207
+[20/Dec/2025 21:32:21] "GET /api/workspaces HTTP/1.1" 200 736
+[20/Dec/2025 21:32:21] "GET /api/workspaces/694715e4af44fd2f02768de9 HTTP/1.1" 200 264
+[20/Dec/2025 21:32:21] "GET /api/workspaces/694715e4af44fd2f02768de9 HTTP/1.1" 200 264
