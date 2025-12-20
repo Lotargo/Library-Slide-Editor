@@ -1,12 +1,14 @@
 import React, { useRef, useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import katex from 'katex';
-import { FileText, Table, Layout, Calendar, Share2, Code, Minus, Quote, CheckSquare } from 'lucide-react';
+import { FileText, Table, Layout, Calendar, Share2, Code, Minus, Quote, CheckSquare, Check } from 'lucide-react';
 
 export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
     const ref = useRef(null);
     const [showMenu, setShowMenu] = useState(false);
     const [menuQuery, setMenuQuery] = useState('');
     const [selectedIndex, setSelectedIndex] = useState(0);
+    const [showToast, setShowToast] = useState(false);
 
     const menuItems = [
         { id: 'slide', label: 'Slide', icon: <FileText size={16} />, type: 'slide_wrapper', content: undefined },
@@ -118,7 +120,8 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
                  const selectedText = range.toString();
 
                  // Wrap in code tag with style and pointer cursor
-                 const codeHtml = `<code style="color: #e83e8c; background-color: rgba(0,0,0,0.05); border-radius: 3px; padding: 0 2px; font-family: monospace; cursor: pointer;">${escapeHtml(selectedText)}</code>`;
+                 // Changed color to blue (#2563eb)
+                 const codeHtml = `<code style="color: #2563eb; background-color: rgba(0,0,0,0.05); border-radius: 3px; padding: 0 2px; font-family: monospace; cursor: pointer;">${escapeHtml(selectedText)}</code>`;
                  document.execCommand('insertHTML', false, codeHtml);
                  return;
              }
@@ -193,9 +196,9 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
                  if (codeMatch) {
                      e.preventDefault();
                      const content = codeMatch[1];
-                     const codeHtml = `<code style="color: #e83e8c; background-color: rgba(0,0,0,0.05); border-radius: 3px; padding: 0 2px; font-family: monospace; cursor: pointer;">${escapeHtml(content)}</code>`;
+                     // Changed color to blue (#2563eb)
+                     const codeHtml = `<code style="color: #2563eb; background-color: rgba(0,0,0,0.05); border-radius: 3px; padding: 0 2px; font-family: monospace; cursor: pointer;">${escapeHtml(content)}</code>`;
 
-                     // Custom replace logic for HTML insertion
                      const newRange = document.createRange();
                      const start = range.startOffset - codeMatch[0].length;
                      newRange.setStart(node, start);
@@ -211,7 +214,7 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
 
         if (e.key === '$') {
              const selection = window.getSelection();
-             if (!selection.rangeCount) return;
+             if (selection.rangeCount > 0) return;
              const range = selection.getRangeAt(0);
              const node = range.startContainer;
              if (node.nodeType === Node.TEXT_NODE) {
@@ -302,7 +305,8 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
             .replace(/\*([^\*]+)\*/g, '<i>$1</i>')
             .replace(/_([^_]+)_/g, '<i>$1</i>')
             .replace(/~~([^~]+)~~/g, '<s>$1</s>')
-            .replace(/`([^`]+)`/g, '<code style="color: #e83e8c; background-color: rgba(0,0,0,0.05); border-radius: 3px; padding: 0 2px; font-family: monospace; cursor: pointer;">$1</code>');
+            // Changed color to blue (#2563eb)
+            .replace(/`([^`]+)`/g, '<code style="color: #2563eb; background-color: rgba(0,0,0,0.05); border-radius: 3px; padding: 0 2px; font-family: monospace; cursor: pointer;">$1</code>');
 
         document.execCommand('insertHTML', false, processed);
     };
@@ -314,15 +318,21 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
                  const originalBg = e.target.style.backgroundColor;
                  const originalTransition = e.target.style.transition;
 
-                 e.target.style.transition = 'background-color 0.2s ease';
-                 e.target.style.backgroundColor = '#86efac'; // light green
+                 e.target.style.transition = 'background-color 0.1s ease';
+                 // Changed to light blue (#bfdbfe)
+                 e.target.style.backgroundColor = '#bfdbfe';
 
+                 // Show Toast
+                 setShowToast(true);
+                 setTimeout(() => setShowToast(false), 2000);
+
+                 // Faster feedback (200ms)
                  setTimeout(() => {
                      e.target.style.backgroundColor = originalBg;
                      setTimeout(() => {
                         e.target.style.transition = originalTransition;
                      }, 200);
-                 }, 500);
+                 }, 200);
              }).catch(err => {
                  console.error("Failed to copy:", err);
              });
@@ -356,6 +366,16 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
                         </button>
                     ))}
                 </div>
+            )}
+
+            {showToast && createPortal(
+                <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 z-[100] animate-in fade-in slide-in-from-bottom-2 duration-200">
+                    <div className="bg-gray-800 text-white text-sm px-4 py-2 rounded-full shadow-lg flex items-center gap-2">
+                         <Check size={14} className="text-green-400" />
+                         <span>Copied to clipboard</span>
+                    </div>
+                </div>,
+                document.body
             )}
         </div>
     );
