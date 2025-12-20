@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
-import { ChevronDown, EyeOff, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify } from 'lucide-react';
+import {
+    ChevronDown, EyeOff, Bold, Italic, Underline,
+    AlignLeft, AlignCenter, AlignRight, AlignJustify,
+    Code, Quote, CheckSquare, Minus, Image as ImageIcon
+} from 'lucide-react';
 
 export default function Toolbar() {
     const [hidden, setHidden] = useState(false);
@@ -22,18 +26,49 @@ export default function Toolbar() {
         document.execCommand(cmd, false, null);
     };
 
+    const handleInsert = (type) => {
+        // Dispatch insert event
+        // We don't have block ID here, so we assume "insert at end" or "replace focused"
+        // But finding focused block is hard without state.
+        // However, ContextMenu used `targetBlockId`.
+        // Toolbar is global.
+        // We can dispatch with `afterId: null` (meaning handle gracefully, e.g. append)
+        // OR rely on `document.activeElement` if it's inside a block.
+
+        let afterId = null;
+        const activeEl = document.activeElement;
+        const blockEl = activeEl?.closest('[data-block-id]');
+        if (blockEl) {
+            afterId = blockEl.getAttribute('data-block-id');
+        }
+
+        window.dispatchEvent(new CustomEvent('editor:insert-block', {
+            detail: { afterId, type }
+        }));
+    };
+
     return (
         <div className="h-12 border-b border-gray-200 flex items-center px-4 bg-white justify-between z-40 sticky top-0">
             <div className="flex items-center gap-1">
                 <ToolButton icon={<Bold size={16} />} title="Bold (Ctrl+B)" onClick={() => handleFormat('bold')} />
                 <ToolButton icon={<Italic size={16} />} title="Italic (Ctrl+I)" onClick={() => handleFormat('italic')} />
                 <ToolButton icon={<Underline size={16} />} title="Underline (Ctrl+U)" onClick={() => handleFormat('underline')} />
+
                 <div className="w-px h-5 bg-gray-200 mx-2"></div>
+
                 <ToolButton icon={<AlignLeft size={16} />} title="Align Left" onClick={() => handleFormat('justifyLeft')} />
                 <ToolButton icon={<AlignCenter size={16} />} title="Align Center" onClick={() => handleFormat('justifyCenter')} />
                 <ToolButton icon={<AlignRight size={16} />} title="Align Right" onClick={() => handleFormat('justifyRight')} />
-                <ToolButton icon={<AlignJustify size={16} />} title="Justify" onClick={() => handleFormat('justifyFull')} />
+
                 <div className="w-px h-5 bg-gray-200 mx-2"></div>
+
+                <ToolButton icon={<CheckSquare size={16} />} title="Checklist" onClick={() => handleInsert('checklist')} />
+                <ToolButton icon={<Quote size={16} />} title="Quote" onClick={() => handleInsert('quote')} />
+                <ToolButton icon={<Code size={16} />} title="Code Block" onClick={() => handleInsert('code')} />
+                <ToolButton icon={<Minus size={16} />} title="Divider" onClick={() => handleInsert('divider')} />
+
+                <div className="w-px h-5 bg-gray-200 mx-2"></div>
+
                 <select className="text-sm border-none bg-transparent hover:bg-gray-100 rounded px-2 py-1 outline-none">
                     <option>Inter</option>
                     <option>Serif</option>

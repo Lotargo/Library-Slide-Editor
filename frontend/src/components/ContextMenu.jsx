@@ -126,6 +126,31 @@ export default function ContextMenu({ onMoveToSlide, onExtractFromSlide }) {
         setPosition(null);
     };
 
+    const handleInsertMermaid = () => {
+        // We need a way to insert a block.
+        // ContextMenu is usually triggered on an existing block.
+        // If we have `onAddNext` accessible here it would be great, but we don't.
+        // However, ContextMenu is usually global.
+        // The most robust way is to use a global event or pass a handler down.
+        // But `ContextMenu` props are `onMoveToSlide`, `onExtractFromSlide`.
+        // It seems we can't easily "Add Block" from here without passing more props.
+        // Wait, the user said: "we can add it again via Right Click... we already have a popup for this".
+        // If I can't add a new block easily, maybe I can "Convert" the current block?
+        // Or I should dispatch an event that the Editor listens to?
+
+        // Let's assume we can dispatch a custom event that `PageEditor` or `BlockList` listens to.
+        // Or simply, since we can't easily add *after* a specific block without context,
+        // maybe we just add to the end or replace current if empty?
+
+        // BETTER APPROACH: The user is clicking on the EDITOR.
+        // If we are over a block, we know `targetBlockId`.
+        // We can emit an event 'insert-block' with detail { afterId: targetBlockId, type: 'mermaid' }
+        window.dispatchEvent(new CustomEvent('editor:insert-block', {
+            detail: { afterId: targetBlockId, type: 'mermaid' }
+        }));
+        setPosition(null);
+    };
+
     if (!position) return null;
 
     const exportLabel = targetSlideId ? 'Export Slide' : 'Export Canvas';
@@ -145,6 +170,14 @@ export default function ContextMenu({ onMoveToSlide, onExtractFromSlide }) {
             >
                 <Upload size={16} />
                 <span>Import File / Image</span>
+            </button>
+
+            <button
+                onClick={handleInsertMermaid}
+                className="w-full text-left px-3 py-1.5 hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700"
+            >
+                <code className="text-xs border border-gray-300 rounded px-1">M</code>
+                <span>Insert Mermaid Diagram</span>
             </button>
 
             {/* Context Actions for Blocks */}
