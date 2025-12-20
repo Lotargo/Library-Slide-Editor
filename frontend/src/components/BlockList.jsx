@@ -50,8 +50,21 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
             }
         };
 
+        const handleDelete = (e) => {
+            const { blockId } = e.detail;
+            if (!blockId) return;
+            const index = blocks.findIndex(b => b.id === blockId);
+            if (index !== -1) {
+                deleteBlock(blockId);
+            }
+        };
+
         window.addEventListener('editor:insert-block', handleInsert);
-        return () => window.removeEventListener('editor:insert-block', handleInsert);
+        window.addEventListener('editor:delete-block', handleDelete);
+        return () => {
+             window.removeEventListener('editor:insert-block', handleInsert);
+             window.removeEventListener('editor:delete-block', handleDelete);
+        };
     }, [blocks, onChange]);
 
     const deleteBlock = (id) => {

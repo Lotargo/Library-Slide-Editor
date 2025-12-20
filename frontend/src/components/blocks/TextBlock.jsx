@@ -173,6 +173,13 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
                      replaceWithFormat(selection, node, range.startOffset - italicMatchUnderscore[0].length, range.startOffset, italicMatchUnderscore[1], 'italic');
                      return;
                  }
+
+                 const codeMatch = textBefore.match(/`([^`]+)`$/);
+                 if (codeMatch) {
+                     e.preventDefault();
+                     replaceWithCode(selection, node, range.startOffset - codeMatch[0].length, range.startOffset, codeMatch[1]);
+                     return;
+                 }
             }
         }
 
@@ -242,6 +249,36 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
         document.execCommand('insertText', false, '\u00A0');
     };
 
+    const replaceWithCode = (selection, node, start, end, innerText) => {
+        const newRange = document.createRange();
+        newRange.setStart(node, start);
+        newRange.setEnd(node, end);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+
+        const safeText = escapeHtml(innerText);
+        const html = `<code class="bg-gray-100 rounded px-1 text-sm text-pink-600 font-mono cursor-pointer hover:bg-gray-200 transition-colors" title="Click to copy">${safeText}</code>`;
+
+        document.execCommand('insertHTML', false, html);
+        document.execCommand('insertText', false, '\u00A0');
+    };
+
+    const handleClick = (e) => {
+        const codeEl = e.target.closest('code');
+        if (codeEl && ref.current.contains(codeEl)) {
+             const text = codeEl.innerText;
+             navigator.clipboard.writeText(text).then(() => {
+                 const originalTitle = codeEl.title;
+                 codeEl.title = "Copied!";
+                 codeEl.classList.add('bg-green-100', 'text-green-700');
+                 setTimeout(() => {
+                     codeEl.title = originalTitle;
+                     codeEl.classList.remove('bg-green-100', 'text-green-700');
+                 }, 1000);
+             }).catch(err => console.error("Copy failed", err));
+        }
+    };
+
     const handlePaste = (e) => {
         e.preventDefault();
         const text = e.clipboardData.getData('text/plain');
@@ -268,7 +305,8 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
             .replace(/\*\*([^\*]+)\*\*/g, '<b>$1</b>')
             .replace(/\*([^\*]+)\*/g, '<i>$1</i>')
             .replace(/_([^_]+)_/g, '<i>$1</i>')
-            .replace(/~~([^~]+)~~/g, '<s>$1</s>');
+            .replace(/~~([^~]+)~~/g, '<s>$1</s>')
+            .replace(/`([^`]+)`/g, '<code class="bg-gray-100 rounded px-1 text-sm text-pink-600 font-mono cursor-pointer hover:bg-gray-200 transition-colors" title="Click to copy">$1</code>');
 
         document.execCommand('insertHTML', false, processed);
     };
@@ -283,6 +321,7 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
                 onInput={handleInput}
                 onKeyDown={handleKeyDown}
                 onPaste={handlePaste}
+                onClick={handleClick}
                 placeholder="Type '/' for commands"
             />
             {showMenu && filteredItems.length > 0 && (
