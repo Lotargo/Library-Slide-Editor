@@ -10,6 +10,9 @@ import json
 import os
 from django.core.files.storage import default_storage
 from django.conf import settings
+from django.core.files.base import ContentFile
+from PIL import Image
+from io import BytesIO
 
 def index(request):
     return render(request, 'editor/index.html')
@@ -124,5 +127,35 @@ def api_upload_file(request):
         filename = os.path.basename(real_path)
 
         url = settings.MEDIA_URL + 'uploads/' + filename
-        return JsonResponse({'url': url, 'filename': filename})
+        thumbnail_url = url # Default to original
+
+        # Generate Thumbnail
+        try:
+            full_file_path = default_storage.path(real_path)
+
+            with Image.open(full_file_path) as img:
+                # Convert to RGB (in case of RGBA/P)
+                if img.mode in ('RGBA', 'P'):
+                    img = img.convert('RGB')
+
+                img.thumbnail((300, 300))
+
+                thumb_io = BytesIO()
+                img.save(thumb_io, format='JPEG', quality=70)
+
+                thumb_filename = f"thumb_{filename}"
+                # Force .jpg extension for the thumbnail
+                thumb_filename = os.path.splitext(thumb_filename)[0] + '.jpg'
+
+                thumb_save_path = os.path.join('thumbnails', thumb_filename)
+
+                thumb_file = ContentFile(thumb_io.getvalue(), name=thumb_filename)
+                saved_thumb_path = default_storage.save(thumb_save_path, thumb_file)
+                thumb_real_name = os.path.basename(saved_thumb_path)
+
+                thumbnail_url = settings.MEDIA_URL + 'thumbnails/' + thumb_real_name
+        except Exception as e:
+            print(f"Thumbnail generation failed: {e}")
+
+        return JsonResponse({'url': url, 'filename': filename, 'thumbnail_url': thumbnail_url})
     return JsonResponse({'error': 'Method not allowed'}, status=405)

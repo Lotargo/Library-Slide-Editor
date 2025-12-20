@@ -1,25 +1,59 @@
-import React, { useState } from 'react';
-import { ChevronLeft, ChevronRight, Grid, LayoutTemplate } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ChevronLeft, ChevronRight, Grid, LayoutTemplate, X } from 'lucide-react';
 
 export default function GalleryBlock({ block, onUpdate }) {
-    // block.content should be an array of image URLs
-    // block.viewMode can be 'grid' or 'carousel' (default 'grid')
+    // block.content: string[] | { url, thumbnail_url }[]
+    const rawImages = Array.isArray(block.content) ? block.content : (block.content ? [block.content] : []);
 
-    const images = Array.isArray(block.content) ? block.content : (block.content ? [block.content] : []);
+    // Normalize to objects
+    const images = rawImages.map(img => {
+        if (typeof img === 'string') return { url: img, thumbnail_url: img };
+        return img;
+    });
+
     const viewMode = block.viewMode || 'grid';
-    const [activeIndex, setActiveIndex] = useState(0);
+    const [activeIndex, setActiveIndex] = useState(0); // For inline carousel
+    const [lightboxIndex, setLightboxIndex] = useState(null); // For full screen overlay
 
     const toggleViewMode = () => {
         onUpdate({ viewMode: viewMode === 'grid' ? 'carousel' : 'grid' });
     };
 
-    const nextImage = () => {
+    const openLightbox = (index) => setLightboxIndex(index);
+    const closeLightbox = () => setLightboxIndex(null);
+
+    const nextImage = (e) => {
+        e?.stopPropagation();
         setActiveIndex((prev) => (prev + 1) % images.length);
     };
 
-    const prevImage = () => {
+    const prevImage = (e) => {
+        e?.stopPropagation();
         setActiveIndex((prev) => (prev - 1 + images.length) % images.length);
     };
+
+    // Lightbox Navigation
+    const nextLightbox = (e) => {
+        e?.stopPropagation();
+        setLightboxIndex((prev) => (prev + 1) % images.length);
+    };
+
+    const prevLightbox = (e) => {
+        e?.stopPropagation();
+        setLightboxIndex((prev) => (prev - 1 + images.length) % images.length);
+    };
+
+    // Keyboard support for lightbox
+    useEffect(() => {
+        if (lightboxIndex === null) return;
+        const handleKeyDown = (e) => {
+            if (e.key === 'Escape') closeLightbox();
+            if (e.key === 'ArrowRight') nextLightbox();
+            if (e.key === 'ArrowLeft') prevLightbox();
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [lightboxIndex]);
 
     if (images.length === 0) {
         return (
@@ -44,10 +78,14 @@ export default function GalleryBlock({ block, onUpdate }) {
 
             {viewMode === 'grid' ? (
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                    {images.map((url, idx) => (
-                        <div key={idx} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200">
+                    {images.map((img, idx) => (
+                        <div
+                            key={idx}
+                            className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden border border-gray-200 cursor-pointer hover:opacity-90 transition-opacity"
+                            onClick={() => openLightbox(idx)}
+                        >
                             <img
-                                src={url}
+                                src={img.thumbnail_url}
                                 alt={`Gallery item ${idx + 1}`}
                                 className="w-full h-full object-cover"
                                 loading="lazy"
@@ -56,12 +94,13 @@ export default function GalleryBlock({ block, onUpdate }) {
                     ))}
                 </div>
             ) : (
-                <div className="relative bg-gray-100 rounded-lg overflow-hidden border border-gray-200 aspect-video flex items-center justify-center">
+                <div className="relative bg-gray-100 rounded-lg overflow-hidden border border-gray-200 aspect-video flex items-center justify-center group/carousel">
                      {/* Carousel Image */}
                      <img
-                        src={images[activeIndex]}
+                        src={images[activeIndex].url}
                         alt={`Slide ${activeIndex + 1}`}
-                        className="max-h-full max-w-full object-contain"
+                        className="max-h-full max-w-full object-contain cursor-zoom-in"
+                        onClick={() => openLightbox(activeIndex)}
                     />
 
                     {/* Navigation */}
@@ -90,6 +129,49 @@ export default function GalleryBlock({ block, onUpdate }) {
                             </div>
                         </>
                     )}
+                </div>
+            )}
+
+            {/* Lightbox Overlay */}
+            {lightboxIndex !== null && (
+                <div
+                    className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center backdrop-blur-sm"
+                    onClick={closeLightbox}
+                >
+                    <button
+                        onClick={closeLightbox}
+                        className="absolute top-4 right-4 text-white/70 hover:text-white p-2 transition-colors"
+                    >
+                        <X size={32} />
+                    </button>
+
+                    <img
+                        src={images[lightboxIndex].url}
+                        alt="Full screen"
+                        className="max-h-[90vh] max-w-[90vw] object-contain shadow-2xl"
+                        onClick={(e) => e.stopPropagation()}
+                    />
+
+                    {images.length > 1 && (
+                        <>
+                             <button
+                                onClick={prevLightbox}
+                                className="absolute left-4 text-white/50 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors"
+                            >
+                                <ChevronLeft size={48} />
+                            </button>
+                            <button
+                                onClick={nextLightbox}
+                                className="absolute right-4 text-white/50 hover:text-white p-2 rounded-full hover:bg-white/10 transition-colors"
+                            >
+                                <ChevronRight size={48} />
+                            </button>
+                        </>
+                    )}
+
+                    <div className="absolute bottom-4 text-white/50 text-sm select-none">
+                        {lightboxIndex + 1} / {images.length}
+                    </div>
                 </div>
             )}
         </div>
