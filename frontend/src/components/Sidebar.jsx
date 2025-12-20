@@ -3,6 +3,7 @@ import { api } from '../api';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { Plus, ChevronRight, ChevronDown, FileText, Trash2, PanelLeftClose } from 'lucide-react';
 import clsx from 'clsx';
+import logo from '../assets/logo.png';
 
 export default function Sidebar({ onClose }) {
     const [workspaces, setWorkspaces] = useState([]);
@@ -42,8 +43,8 @@ export default function Sidebar({ onClose }) {
         <aside className="w-full h-full bg-gray-50 border-r border-gray-200 flex flex-col flex-shrink-0">
             <div className="p-3 border-b border-gray-100 flex justify-between items-center">
                 <div className="flex items-center gap-2">
-                   <div className="w-5 h-5 bg-black rounded flex items-center justify-center text-white text-xs font-bold">J</div>
-                   <h2 className="font-semibold text-gray-700 text-sm">Jules Workspace</h2>
+                   <img src={logo} alt="Logo" className="w-5 h-5 object-contain" />
+                   <h2 className="font-semibold text-gray-700 text-sm">Library</h2>
                 </div>
                 <div className="flex items-center gap-1">
                     <button onClick={handleCreateWorkspace} className="p-1 hover:bg-gray-200 rounded text-gray-500 hover:text-gray-900 transition-colors" title="New Workspace">
