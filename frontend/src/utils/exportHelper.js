@@ -9,10 +9,20 @@ export const exportToPng = async (elementId, filename = 'export') => {
     }
 
     try {
+        const width = node.scrollWidth;
+        const height = node.scrollHeight;
+
         const dataUrl = await toPng(node, {
             quality: 1.0,
             pixelRatio: 3,
-            backgroundColor: '#ffffff'
+            backgroundColor: '#ffffff',
+            width: width,
+            height: height,
+            style: {
+                overflow: 'visible',
+                height: 'auto',
+                maxHeight: 'none'
+            }
         });
 
         const link = document.createElement('a');
@@ -30,18 +40,23 @@ export const exportToPdf = async (elementId, filename = 'export') => {
     if (!node) return;
 
     try {
+        const width = node.scrollWidth;
+        const height = node.scrollHeight;
+
         const dataUrl = await toPng(node, {
             quality: 1.0,
             pixelRatio: 3,
-            backgroundColor: '#ffffff'
+            backgroundColor: '#ffffff',
+            width: width,
+            height: height,
+            style: {
+                overflow: 'visible',
+                height: 'auto',
+                maxHeight: 'none'
+            }
         });
 
         // Calculate dimensions
-        // node.offsetWidth is CSS pixels.
-        // We want PDF to match visual size.
-        const width = node.offsetWidth;
-        const height = node.offsetHeight;
-
         const pdf = new jsPDF({
             orientation: width > height ? 'l' : 'p',
             unit: 'px',
