@@ -14,7 +14,7 @@ import DividerBlock from './blocks/DividerBlock';
 import QuoteBlock from './blocks/QuoteBlock';
 import ChecklistBlock from './blocks/ChecklistBlock';
 
-export default function BlockWrapper({ block, onUpdate, onAddNext, onDelete }) {
+export default function BlockWrapper({ block, onUpdate, onAddNext, onDelete, autoFocus }) {
     const [hover, setHover] = useState(false);
 
     const {
@@ -30,14 +30,14 @@ export default function BlockWrapper({ block, onUpdate, onAddNext, onDelete }) {
         transform: CSS.Transform.toString(transform),
         transition,
         opacity: isDragging ? 0.5 : 1,
-        zIndex: isDragging ? 10 : 'auto', // Ensure dragged item is above others
+        zIndex: isDragging ? 10 : 'auto',
         position: 'relative'
     };
 
     const renderContent = () => {
         switch (block.type) {
             case 'slide_wrapper':
-            case 'slide': // Handle legacy or alternative type name
+            case 'slide':
                 return <SlideBlock block={block} onUpdate={onUpdate} />;
             case 'table':
                 return <TableBlock block={block} onUpdate={onUpdate} />;
@@ -54,12 +54,12 @@ export default function BlockWrapper({ block, onUpdate, onAddNext, onDelete }) {
             case 'divider':
                 return <DividerBlock block={block} onUpdate={onUpdate} />;
             case 'quote':
-                return <QuoteBlock block={block} onUpdate={onUpdate} onAddNext={onAddNext} />;
+                return <QuoteBlock block={block} onUpdate={onUpdate} onAddNext={onAddNext} autoFocus={autoFocus} />;
             case 'checklist':
-                return <ChecklistBlock block={block} onUpdate={onUpdate} onAddNext={onAddNext} />;
+                return <ChecklistBlock block={block} onUpdate={onUpdate} onAddNext={onAddNext} autoFocus={autoFocus} />;
             case 'text':
             default:
-                return <TextBlock block={block} onUpdate={onUpdate} onAddNext={onAddNext} />;
+                return <TextBlock block={block} onUpdate={onUpdate} onAddNext={onAddNext} autoFocus={autoFocus} />;
         }
     }
 
@@ -73,10 +73,9 @@ export default function BlockWrapper({ block, onUpdate, onAddNext, onDelete }) {
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}
         >
-            {/* Gutter / Controls */}
             <div
                 className={`flex items-center pt-1.5 gap-0.5 absolute left-0 w-20 justify-end pr-2 transition-opacity duration-200 z-10 ${hover || isDragging ? 'opacity-100' : 'opacity-0'}`}
-                contentEditable={false} // Make sure controls aren't editable
+                contentEditable={false}
             >
                 <button
                     onClick={onAddNext}
@@ -102,7 +101,6 @@ export default function BlockWrapper({ block, onUpdate, onAddNext, onDelete }) {
                 </button>
             </div>
 
-            {/* Block Content */}
             <div className="flex-grow min-w-0 ml-20">
                 {renderContent()}
             </div>

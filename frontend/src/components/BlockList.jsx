@@ -8,6 +8,7 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
     const listRef = useRef(null);
     const [dragOverIndex, setDragOverIndex] = useState(null);
     const [isDraggingFile, setIsDraggingFile] = useState(false);
+    const [focusId, setFocusId] = useState(null);
 
     const updateBlock = (id, updates) => {
         const newBlocks = blocks.map(b => b.id === id ? { ...b, ...updates } : b);
@@ -24,6 +25,7 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
             newBlocks.splice(index + 1, 0, newBlock);
         }
         onChange(newBlocks);
+        setFocusId(newBlock.id);
     };
 
     const insertBlockAtIndex = (index, type, content) => {
@@ -31,19 +33,13 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
         const newBlocks = [...blocks];
         newBlocks.splice(index, 0, newBlock);
         onChange(newBlocks);
+        setFocusId(newBlock.id);
     }
 
     // Listen for custom insert events (e.g. from ContextMenu)
     React.useEffect(() => {
         const handleInsert = (e) => {
             const { afterId, type, content } = e.detail;
-            // Only handle if we contain the afterId (or if afterId is null and we are the root/active list?)
-            // This is tricky if we have nested BlockLists (slides).
-            // We check if 'afterId' exists in our blocks.
-            // OR if afterId is null, maybe append to end?
-
-            // If we are a nested list (listId !== 'root'), we should be careful.
-            // But usually the user clicks ON a block.
             if (!afterId) return;
 
             const index = blocks.findIndex(b => b.id === afterId);
@@ -54,7 +50,7 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
 
         window.addEventListener('editor:insert-block', handleInsert);
         return () => window.removeEventListener('editor:insert-block', handleInsert);
-    }, [blocks, onChange]); // Re-bind when blocks change so we have latest state
+    }, [blocks, onChange]);
 
     const deleteBlock = (id) => {
         const newBlocks = blocks.filter(b => b.id !== id);
@@ -64,31 +60,20 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
     // --- File Drag & Drop Handlers ---
 
     const handleDragOver = (e) => {
-        // Only handle file drags, let dnd-kit handle internal sorting
         if (!e.dataTransfer.types.includes('Files')) return;
 
         e.preventDefault();
         e.stopPropagation();
         setIsDraggingFile(true);
 
-        // Calculate closest insertion point
-        // We find the block whose center is closest to e.clientY
-        // Or simply finding the gap.
-
-        // Since we are inside a relative container, we need to be careful with coordinates.
-        // Simple heuristic: find the child with bounding rect.
         const listRect = listRef.current?.getBoundingClientRect();
         if (!listRect) return;
 
-        // Find children block wrappers
-        // Note: SortableContext renders children directly. BlockWrapper renders a div with data-block-id.
-        // We can query selector for them.
         const children = Array.from(listRef.current.querySelectorAll('[data-block-id]'));
 
-        let closestIndex = children.length; // Default to end
+        let closestIndex = children.length;
         let minDistance = Infinity;
 
-        // Check distance to the top of the first element
         if (children.length > 0) {
             const firstRect = children[0].getBoundingClientRect();
             const distToFirstTop = Math.abs(e.clientY - firstRect.top);
@@ -98,7 +83,6 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
             }
         }
 
-        // Check distance to bottom of each element
         children.forEach((child, idx) => {
             const rect = child.getBoundingClientRect();
             const distToBottom = Math.abs(e.clientY - rect.bottom);
@@ -112,7 +96,6 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
     };
 
     const handleDragLeave = (e) => {
-         // Check if we really left the list container
          if (listRef.current && !listRef.current.contains(e.relatedTarget)) {
             setIsDraggingFile(false);
             setDragOverIndex(null);
@@ -131,10 +114,7 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
         const files = Array.from(e.dataTransfer.files);
         if (files.length === 0) return;
 
-        // Process files
         const uploadedImages = [];
-
-        // We'll upload all images
         for (const file of files) {
             if (file.type.startsWith('image/')) {
                 try {
@@ -143,15 +123,10 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
                 } catch (err) {
                     console.error("Upload failed for file", file.name, err);
                 }
-            } else {
-                // Handle non-image files if needed?
-                // For now, ignoring or we could insert them as text links.
-                // Requirement only specified images for drag & drop with shrinking/gallery.
             }
         }
 
         if (uploadedImages.length > 0) {
-            // Create a Gallery Block
             insertBlockAtIndex(index, 'gallery', uploadedImages);
         }
     };
@@ -183,12 +158,7 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
                 <div
                     className="absolute left-0 right-0 h-1 bg-blue-500 z-50 pointer-events-none transition-all duration-100"
                     style={{
-                        // We need to position this indicator.
-                        // It's tricky with "absolute" relative to "listRef" if children have varying heights.
-                        // However, we calculated index. Let's try to render it simply between items in the list flow.
-                        // Actually, rendering it "absolutey" based on index is hard without knowing exact pixel offsets of children.
-                        // A better way is to render the indicator IN the list based on index.
-                        display: 'none' // We will render it inside the mapping logic below
+                        display: 'none'
                     }}
                 />
             )}
@@ -197,7 +167,6 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
                 <div className="space-y-2">
                     {blocks.map((block, idx) => (
                         <React.Fragment key={block.id}>
-                            {/* Drop Indicator before block */}
                             {isDraggingFile && dragOverIndex === idx && (
                                 <div className="h-1 bg-blue-500 rounded my-1 animate-pulse" />
                             )}
@@ -207,16 +176,15 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
                                 onUpdate={(updates) => updateBlock(block.id, updates)}
                                 onAddNext={() => addBlock(block.id)}
                                 onDelete={() => deleteBlock(block.id)}
+                                autoFocus={block.id === focusId}
                             />
 
-                            {/* Drop Indicator after last block */}
                             {isDraggingFile && dragOverIndex === blocks.length && idx === blocks.length - 1 && (
                                 <div className="h-1 bg-blue-500 rounded my-1 animate-pulse" />
                             )}
                         </React.Fragment>
                     ))}
 
-                    {/* Click area at bottom to append */}
                     <div
                         className="h-32 cursor-text"
                         onClick={() => addBlock(blocks[blocks.length-1].id)}
