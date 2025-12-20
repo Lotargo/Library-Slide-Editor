@@ -53,14 +53,19 @@ const captureFitContent = async (node) => {
 };
 
 const captureFullScroll = async (node) => {
-    // For full page export, use the scroll dimensions
-    const width = node.scrollWidth;
-    const height = node.scrollHeight;
+    // For full page export, use the bounding box to ensure all content (including overflow) is captured
+    const box = getBoundingBox(node);
+    const padding = 20;
+    const width = box.width + (padding * 2);
+    const height = box.height + (padding * 2);
 
     const style = {
         overflow: 'visible',
         height: 'auto',
         maxHeight: 'none',
+        width: 'auto',
+        maxWidth: 'none',
+        transform: `translate(${box.offsetX + padding}px, ${box.offsetY + padding}px)`
     };
 
     const dataUrl = await toPng(node, {
