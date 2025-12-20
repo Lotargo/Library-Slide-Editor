@@ -119,7 +119,10 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
             if (file.type.startsWith('image/')) {
                 try {
                     const data = await api.uploadFile(file);
-                    uploadedImages.push(data.url);
+                    uploadedImages.push({
+                        url: data.url,
+                        thumbnail_url: data.thumbnail_url || data.url
+                    });
                 } catch (err) {
                     console.error("Upload failed for file", file.name, err);
                 }
