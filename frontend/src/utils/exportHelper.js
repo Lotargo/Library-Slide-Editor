@@ -75,7 +75,7 @@ const captureFullScroll = async (node) => {
     return { dataUrl, width, height };
 };
 
-export const exportToPng = async (elementId, filename = 'export', type = 'slide') => {
+export const exportSlideToPng = async (elementId, filename = 'slide') => {
     const node = document.getElementById(elementId);
     if (!node) {
         console.error('Element not found:', elementId);
@@ -83,13 +83,7 @@ export const exportToPng = async (elementId, filename = 'export', type = 'slide'
     }
 
     try {
-        let result;
-        if (type === 'page') {
-            result = await captureFullScroll(node);
-        } else {
-            result = await captureFitContent(node);
-        }
-
+        const result = await captureFitContent(node);
         const link = document.createElement('a');
         link.download = `${filename}.png`;
         link.href = result.dataUrl;
@@ -100,13 +94,38 @@ export const exportToPng = async (elementId, filename = 'export', type = 'slide'
     }
 };
 
+export const exportCanvasToPng = async (elementId, filename = 'canvas') => {
+    const node = document.getElementById(elementId);
+    if (!node) {
+        console.error('Element not found:', elementId);
+        return;
+    }
+
+    try {
+        const result = await captureFullScroll(node);
+        const link = document.createElement('a');
+        link.download = `${filename}.png`;
+        link.href = result.dataUrl;
+        link.click();
+    } catch (err) {
+        console.error('Export failed', err);
+        alert('Export failed');
+    }
+};
+
+// Deprecated or shared for PDF, keeping for backward compatibility if needed,
+// but based on user request we are splitting.
+// For PDF we will use the same internal logic via `exportToPdf` still taking a type.
+// User said: "пока сфокусируемся на png".
+// So I will keep exportToPdf as is (working) but PNG is now split.
+
 export const exportToPdf = async (elementId, filename = 'export', type = 'slide') => {
     const node = document.getElementById(elementId);
     if (!node) return;
 
     try {
         let result;
-        if (type === 'page') {
+        if (type === 'page' || type === 'canvas') {
             result = await captureFullScroll(node);
         } else {
             result = await captureFitContent(node);

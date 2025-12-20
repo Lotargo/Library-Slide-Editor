@@ -2,7 +2,7 @@ import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Upload, Download, Image as ImageIcon } from 'lucide-react';
 import { api } from '../api';
-import { exportToPng, exportToPdf } from '../utils/exportHelper';
+import { exportSlideToPng, exportCanvasToPng, exportToPdf } from '../utils/exportHelper';
 
 export default function ContextMenu() {
     const [position, setPosition] = useState(null);
@@ -77,11 +77,19 @@ export default function ContextMenu() {
     };
 
     const handleExport = (format) => {
-        const id = targetSlideId ? `slide-content-${targetSlideId}` : 'page-content-root';
-        const name = targetSlideId ? 'slide' : 'page';
-        const type = targetSlideId ? 'slide' : 'page';
-        if (format === 'png') exportToPng(id, name, type);
-        if (format === 'pdf') exportToPdf(id, name, type);
+        if (format === 'png') {
+            if (targetSlideId) {
+                exportSlideToPng(`slide-content-${targetSlideId}`, 'slide');
+            } else {
+                exportCanvasToPng('page-content-root', 'canvas');
+            }
+        } else if (format === 'pdf') {
+            // PDF logic remains shared for now, but respecting the type
+            const id = targetSlideId ? `slide-content-${targetSlideId}` : 'page-content-root';
+            const name = targetSlideId ? 'slide' : 'canvas';
+            const type = targetSlideId ? 'slide' : 'canvas';
+            exportToPdf(id, name, type);
+        }
         setPosition(null);
     };
 
@@ -91,7 +99,7 @@ export default function ContextMenu() {
 
     if (!position) return null;
 
-    const exportLabel = targetSlideId ? 'Export Slide' : 'Export Page';
+    const exportLabel = targetSlideId ? 'Export Slide' : 'Export Canvas';
 
     return createPortal(
         <div
