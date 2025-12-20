@@ -29,26 +29,42 @@ export default function CodeBlock({ block, onUpdate }) {
                 Code
             </div>
             <textarea
-                className="w-full bg-transparent text-gray-200 p-4 min-h-[100px] resize-y outline-none font-mono z-10 relative"
+                className="w-full bg-transparent p-4 min-h-[100px] resize-y outline-none font-mono z-10 relative leading-normal code-editor-textarea"
                 value={block.content || ''}
                 onChange={handleChange}
                 spellCheck="false"
                 style={{
+                    color: 'transparent',
                     caretColor: 'white',
-                    // Mix blend mode or absolute positioning to overlay?
-                    // Actually, overlays are complex.
-                    // For MVP, just a styled Textarea is fine. Syntax highlighting in *editing* requires complex libs (Monaco/CodeMirror).
-                    // The user asked for "Syntax Highlighting".
-                    // If I use a simple textarea, I don't get highlighting WHILE typing easily.
-                    // Let's use the "Overlay" trick: Textarea transparent on top of Pre/Code.
+                    fontFamily: 'monospace', // Ensure matches Prism
+                    fontSize: '0.875rem',    // text-sm
                 }}
             />
+            <style>{`
+                .code-editor-textarea::selection {
+                    background-color: rgba(255, 255, 255, 0.2);
+                    color: transparent; /* Keep text transparent so underlying syntax highlight shows? No, selection makes text visible usually. */
+                }
+                /* Actually, if text is transparent, we can't see it in selection.
+                   If we make it white in selection, we lose syntax highlighting.
+                   VS Code handles this by drawing selection BEHIND text.
+                   Since textarea is ON TOP, its selection background covers the Pre underneath?
+                   Yes, standard selection background is opaque-ish.
+                   Ideally we want transparent background for selection?
+                   Or we rely on the caret.
+                   Let's set text color to white on selection?
+                */
+                .code-editor-textarea::selection {
+                     background: rgba(255, 255, 255, 0.2);
+                     color: white; /* Fallback to white text on selection */
+                }
+            `}</style>
             {/* Syntax Highlight Overlay */}
             <pre
-                className="absolute top-0 left-0 w-full h-full p-4 pointer-events-none m-0 overflow-hidden"
+                className="absolute top-0 left-0 w-full h-full p-4 pointer-events-none m-0 overflow-hidden leading-normal"
                 aria-hidden="true"
             >
-                <code ref={codeRef} className="language-javascript">
+                <code ref={codeRef} className="language-javascript" style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>
                     {block.content || ' '}
                 </code>
             </pre>
