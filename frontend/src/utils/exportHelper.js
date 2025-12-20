@@ -27,7 +27,55 @@ const getBoundingBox = (node) => {
     };
 };
 
-export const exportToPng = async (elementId, filename = 'export') => {
+const captureFitContent = async (node) => {
+    const box = getBoundingBox(node);
+    const padding = 0;
+    const width = box.width + (padding * 2);
+    const height = box.height + (padding * 2);
+
+    const style = {
+        overflow: 'visible',
+        height: 'auto',
+        maxHeight: 'none',
+        transform: `translate(${box.offsetX + padding}px, ${box.offsetY + padding}px)`
+    };
+
+    const dataUrl = await toPng(node, {
+        quality: 1.0,
+        pixelRatio: 3,
+        backgroundColor: '#ffffff',
+        width: width,
+        height: height,
+        style: style
+    });
+
+    return { dataUrl, width, height };
+};
+
+const captureFullScroll = async (node) => {
+    // For full page export, use the scroll dimensions
+    const width = node.scrollWidth;
+    const height = node.scrollHeight;
+
+    const style = {
+        overflow: 'visible',
+        height: 'auto',
+        maxHeight: 'none',
+    };
+
+    const dataUrl = await toPng(node, {
+        quality: 1.0,
+        pixelRatio: 3,
+        backgroundColor: '#ffffff',
+        width: width,
+        height: height,
+        style: style
+    });
+
+    return { dataUrl, width, height };
+};
+
+export const exportToPng = async (elementId, filename = 'export', type = 'slide') => {
     const node = document.getElementById(elementId);
     if (!node) {
         console.error('Element not found:', elementId);
@@ -35,32 +83,16 @@ export const exportToPng = async (elementId, filename = 'export') => {
     }
 
     try {
-        const box = getBoundingBox(node);
-        // Add minimal padding to avoid edge clipping
-        const padding = 0;
-        const width = box.width + (padding * 2);
-        const height = box.height + (padding * 2);
-
-        const style = {
-            overflow: 'visible',
-            height: 'auto',
-            maxHeight: 'none',
-            // Shift content into view if it sticks out left/top
-            transform: `translate(${box.offsetX + padding}px, ${box.offsetY + padding}px)`
-        };
-
-        const dataUrl = await toPng(node, {
-            quality: 1.0,
-            pixelRatio: 3,
-            backgroundColor: '#ffffff',
-            width: width,
-            height: height,
-            style: style
-        });
+        let result;
+        if (type === 'page') {
+            result = await captureFullScroll(node);
+        } else {
+            result = await captureFitContent(node);
+        }
 
         const link = document.createElement('a');
         link.download = `${filename}.png`;
-        link.href = dataUrl;
+        link.href = result.dataUrl;
         link.click();
     } catch (err) {
         console.error('Export failed', err);
@@ -68,31 +100,19 @@ export const exportToPng = async (elementId, filename = 'export') => {
     }
 };
 
-export const exportToPdf = async (elementId, filename = 'export') => {
+export const exportToPdf = async (elementId, filename = 'export', type = 'slide') => {
     const node = document.getElementById(elementId);
     if (!node) return;
 
     try {
-        const box = getBoundingBox(node);
-        const padding = 0;
-        const width = box.width + (padding * 2);
-        const height = box.height + (padding * 2);
+        let result;
+        if (type === 'page') {
+            result = await captureFullScroll(node);
+        } else {
+            result = await captureFitContent(node);
+        }
 
-        const style = {
-            overflow: 'visible',
-            height: 'auto',
-            maxHeight: 'none',
-            transform: `translate(${box.offsetX + padding}px, ${box.offsetY + padding}px)`
-        };
-
-        const dataUrl = await toPng(node, {
-            quality: 1.0,
-            pixelRatio: 3,
-            backgroundColor: '#ffffff',
-            width: width,
-            height: height,
-            style: style
-        });
+        const { dataUrl, width, height } = result;
 
         const pdf = new jsPDF({
             orientation: width > height ? 'l' : 'p',
