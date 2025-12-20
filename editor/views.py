@@ -111,3 +111,18 @@ def api_fonts(request):
         save_font_metadata(font_name, filename)
 
         return JsonResponse({'success': True, 'filename': filename, 'url': settings.MEDIA_URL + 'fonts/' + filename})
+
+@csrf_exempt
+def api_upload_file(request):
+    if request.method == 'POST':
+        if 'file' not in request.FILES:
+             return JsonResponse({'error': 'No file'}, status=400)
+
+        f = request.FILES['file']
+        save_path = os.path.join('uploads', f.name)
+        real_path = default_storage.save(save_path, f)
+        filename = os.path.basename(real_path)
+
+        url = settings.MEDIA_URL + 'uploads/' + filename
+        return JsonResponse({'url': url, 'filename': filename})
+    return JsonResponse({'error': 'Method not allowed'}, status=405)

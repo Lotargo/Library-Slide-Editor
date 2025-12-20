@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ChevronDown, EyeOff, Bold, Italic, Underline } from 'lucide-react';
+import { ChevronDown, EyeOff, Bold, Italic, Underline, AlignLeft, AlignCenter, AlignRight, AlignJustify } from 'lucide-react';
 
 export default function Toolbar() {
     const [hidden, setHidden] = useState(false);
@@ -28,6 +28,11 @@ export default function Toolbar() {
                 <ToolButton icon={<Bold size={16} />} title="Bold (Ctrl+B)" onClick={() => handleFormat('bold')} />
                 <ToolButton icon={<Italic size={16} />} title="Italic (Ctrl+I)" onClick={() => handleFormat('italic')} />
                 <ToolButton icon={<Underline size={16} />} title="Underline (Ctrl+U)" onClick={() => handleFormat('underline')} />
+                <div className="w-px h-5 bg-gray-200 mx-2"></div>
+                <ToolButton icon={<AlignLeft size={16} />} title="Align Left" onClick={() => handleFormat('justifyLeft')} />
+                <ToolButton icon={<AlignCenter size={16} />} title="Align Center" onClick={() => handleFormat('justifyCenter')} />
+                <ToolButton icon={<AlignRight size={16} />} title="Align Right" onClick={() => handleFormat('justifyRight')} />
+                <ToolButton icon={<AlignJustify size={16} />} title="Justify" onClick={() => handleFormat('justifyFull')} />
                 <div className="w-px h-5 bg-gray-200 mx-2"></div>
                 <select className="text-sm border-none bg-transparent hover:bg-gray-100 rounded px-2 py-1 outline-none">
                     <option>Inter</option>

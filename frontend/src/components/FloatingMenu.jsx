@@ -1,10 +1,13 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Bold, Italic, Scissors, Copy, Presentation } from 'lucide-react';
+import { Bold, Italic, Scissors, Copy, Presentation, AlignLeft, AlignCenter, AlignRight, AlignJustify, Upload } from 'lucide-react';
+import { api } from '../api';
 
 export default function FloatingMenu({ onConvertToSlide }) {
     const [position, setPosition] = useState(null);
     const menuRef = useRef(null);
+    const fileInputRef = useRef(null);
+    const savedRange = useRef(null);
 
     useEffect(() => {
         const handleSelection = () => {
@@ -15,11 +18,6 @@ export default function FloatingMenu({ onConvertToSlide }) {
                 setPosition(null);
                 return;
             }
-
-            // Simple check: Ensure we are inside the editor
-            // const anchorNode = selection.anchorNode;
-            // const editorElement = document.getElementById('editor-content-area');
-            // For now, relying on valid selection in the document.
 
             const range = selection.getRangeAt(0);
             const rect = range.getBoundingClientRect();
@@ -36,8 +34,6 @@ export default function FloatingMenu({ onConvertToSlide }) {
         };
 
         document.addEventListener('selectionchange', handleSelection);
-        // Also handle scroll to update position? Or close?
-        // document.addEventListener('scroll', handleSelection, true);
 
         return () => {
             document.removeEventListener('selectionchange', handleSelection);
@@ -46,6 +42,56 @@ export default function FloatingMenu({ onConvertToSlide }) {
 
     const handleFormat = (cmd) => {
         document.execCommand(cmd, false, null);
+    };
+
+    const triggerFileUpload = () => {
+        const selection = window.getSelection();
+        if (selection && selection.rangeCount > 0) {
+            savedRange.current = selection.getRangeAt(0);
+        }
+        fileInputRef.current?.click();
+    };
+
+    const handleFileChange = async (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        try {
+            const data = await api.uploadFile(file);
+
+            // Restore selection
+            if (savedRange.current) {
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(savedRange.current);
+            }
+
+            const isImage = file.type.startsWith('image/');
+            let html = '';
+            if (isImage) {
+                 html = `<img src="${data.url}" alt="${data.filename}" style="max-width: 100%; height: auto; display: inline-block;" />`;
+            } else {
+                 // Insert a link. We wrap the selection or insert at selection?
+                 // insertHTML replaces selection with HTML.
+                 // So if I selected "text", it gets replaced by the link.
+                 // If I want to KEEP the text as the link text?
+                 // If I uploaded a file, usually the file HAS a name.
+                 // If I select "Here is the report" and upload "report.pdf".
+                 // Do I want <a href...>report.pdf</a> or <a href...>Here is the report</a>?
+                 // User said: "others will be as attached objects in text".
+                 // Usually implies an object with filename.
+                 // So I will use filename.
+                 html = `<a href="${data.url}" target="_blank" class="text-blue-600 underline hover:text-blue-800 mx-1" contenteditable="false">${data.filename}</a>`;
+            }
+
+            document.execCommand('insertHTML', false, html);
+            setPosition(null);
+        } catch (err) {
+            console.error(err);
+            alert("Upload failed");
+        }
+
+        e.target.value = '';
     };
 
     if (!position) return null;
@@ -66,19 +112,44 @@ export default function FloatingMenu({ onConvertToSlide }) {
                 <span className="text-xs">Slide</span>
              </button>
              <div className="w-px h-5 bg-gray-200 mx-1"></div>
+
              <button onClick={() => handleFormat('bold')} className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-black" title="Bold">
                  <Bold size={18}/>
              </button>
              <button onClick={() => handleFormat('italic')} className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-black" title="Italic">
                  <Italic size={18}/>
              </button>
+
              <div className="w-px h-5 bg-gray-200 mx-1"></div>
+
+             <button onClick={() => handleFormat('justifyLeft')} className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-black" title="Align Left">
+                 <AlignLeft size={18}/>
+             </button>
+             <button onClick={() => handleFormat('justifyCenter')} className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-black" title="Align Center">
+                 <AlignCenter size={18}/>
+             </button>
+             <button onClick={() => handleFormat('justifyRight')} className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-black" title="Align Right">
+                 <AlignRight size={18}/>
+             </button>
+             <button onClick={() => handleFormat('justifyFull')} className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-black" title="Justify">
+                 <AlignJustify size={18}/>
+             </button>
+
+             <div className="w-px h-5 bg-gray-200 mx-1"></div>
+
              <button onClick={() => handleFormat('cut')} className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-black" title="Cut">
                  <Scissors size={18}/>
              </button>
              <button onClick={() => handleFormat('copy')} className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-black" title="Copy">
                  <Copy size={18}/>
              </button>
+
+             <div className="w-px h-5 bg-gray-200 mx-1"></div>
+
+             <button onClick={triggerFileUpload} className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-blue-600" title="Import Attachment">
+                 <Upload size={18}/>
+             </button>
+             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
         </div>,
         document.body
     );
