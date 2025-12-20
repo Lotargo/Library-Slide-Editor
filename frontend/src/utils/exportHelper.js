@@ -1,6 +1,7 @@
 import { toPng } from 'html-to-image';
 import { jsPDF } from 'jspdf';
 
+// Helper for single slide export (unchanged)
 const getBoundingBox = (node) => {
     const rect = node.getBoundingClientRect();
     let minX = rect.left;
@@ -22,8 +23,8 @@ const getBoundingBox = (node) => {
     return {
         width: maxX - minX,
         height: maxY - minY,
-        offsetX: rect.left - minX, // Positive if content extends left
-        offsetY: rect.top - minY   // Positive if content extends top
+        offsetX: rect.left - minX,
+        offsetY: rect.top - minY
     };
 };
 
@@ -52,32 +53,77 @@ const captureFitContent = async (node) => {
     return { dataUrl, width, height };
 };
 
-const captureFullScroll = async (node) => {
-    // For full page export, use the bounding box to ensure all content (including overflow) is captured
-    const box = getBoundingBox(node);
-    const padding = 20;
-    const width = box.width + (padding * 2);
-    const height = box.height + (padding * 2);
+// New logic: Clone the DOM, remove scroll constraints, then capture.
+const prepareClone = (node) => {
+    const clone = node.cloneNode(true);
+    const container = document.createElement('div');
 
-    const style = {
-        overflow: 'visible',
-        height: 'auto',
-        maxHeight: 'none',
-        width: 'auto',
-        maxWidth: 'none',
-        transform: `translate(${box.offsetX + padding}px, ${box.offsetY + padding}px)`
-    };
+    // Position off-screen but visible to the rendering engine
+    container.style.position = 'fixed';
+    container.style.top = '-10000px';
+    container.style.left = '-10000px';
+    // Use the same width as the original to maintain layout, but allow height to grow
+    container.style.width = `${node.offsetWidth}px`;
+    container.style.height = 'auto';
+    container.style.overflow = 'visible';
 
-    const dataUrl = await toPng(node, {
-        quality: 1.0,
-        pixelRatio: 3,
-        backgroundColor: '#ffffff',
-        width: width,
-        height: height,
-        style: style
+    // Append clone
+    container.appendChild(clone);
+    document.body.appendChild(container);
+
+    // 1. Expand Root
+    clone.style.height = 'auto';
+    clone.style.minHeight = 'auto';
+    clone.style.overflow = 'visible';
+    clone.style.maxHeight = 'none';
+
+    // 2. Expand Slides
+    // Looking for elements that match the slide pattern.
+    // In SlideBlock.jsx: id={`slide-content-${block.id}`}
+    const slides = clone.querySelectorAll('[id^="slide-content-"]');
+    slides.forEach(slide => {
+        // Remove aspect ratio constraint
+        slide.style.aspectRatio = 'unset';
+        slide.style.height = 'auto';
+        slide.style.maxHeight = 'none';
+
+        // Find the inner scroller.
+        // Based on SlideBlock.jsx: <div className="... overflow-y-auto ...">
+        const scrollers = slide.querySelectorAll('.overflow-y-auto');
+        scrollers.forEach(scroller => {
+            scroller.style.overflow = 'visible';
+            scroller.style.height = 'auto';
+            scroller.style.maxHeight = 'none';
+        });
     });
 
-    return { dataUrl, width, height };
+    return { container, clone };
+};
+
+const captureCanvasViaClone = async (originalNode) => {
+    const { container, clone } = prepareClone(originalNode);
+
+    // Force reflow
+    const _ = clone.offsetHeight;
+
+    // Calculate dimensions based on the expanded content
+    const width = clone.scrollWidth;
+    const height = clone.scrollHeight;
+
+    try {
+        const dataUrl = await toPng(clone, {
+            quality: 1.0,
+            pixelRatio: 2,
+            backgroundColor: '#ffffff',
+            width: width,
+            height: height,
+        });
+        return { dataUrl, width, height };
+    } finally {
+        if (document.body.contains(container)) {
+            document.body.removeChild(container);
+        }
+    }
 };
 
 export const exportSlideToPng = async (elementId, filename = 'slide') => {
@@ -107,7 +153,8 @@ export const exportCanvasToPng = async (elementId, filename = 'canvas') => {
     }
 
     try {
-        const result = await captureFullScroll(node);
+        // Use the new cloning method
+        const result = await captureCanvasViaClone(node);
         const link = document.createElement('a');
         link.download = `${filename}.png`;
         link.href = result.dataUrl;
@@ -118,12 +165,6 @@ export const exportCanvasToPng = async (elementId, filename = 'canvas') => {
     }
 };
 
-// Deprecated or shared for PDF, keeping for backward compatibility if needed,
-// but based on user request we are splitting.
-// For PDF we will use the same internal logic via `exportToPdf` still taking a type.
-// User said: "пока сфокусируемся на png".
-// So I will keep exportToPdf as is (working) but PNG is now split.
-
 export const exportToPdf = async (elementId, filename = 'export', type = 'slide') => {
     const node = document.getElementById(elementId);
     if (!node) return;
@@ -131,7 +172,8 @@ export const exportToPdf = async (elementId, filename = 'export', type = 'slide'
     try {
         let result;
         if (type === 'page' || type === 'canvas') {
-            result = await captureFullScroll(node);
+            // Use the new cloning method for PDF canvas export as well
+            result = await captureCanvasViaClone(node);
         } else {
             result = await captureFitContent(node);
         }
