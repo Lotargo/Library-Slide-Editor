@@ -7,6 +7,7 @@ import SlideBlock from './blocks/SlideBlock';
 import TableBlock from './blocks/TableBlock';
 import BoardBlock from './blocks/BoardBlock';
 import CalendarBlock from './blocks/CalendarBlock';
+import GalleryBlock from './blocks/GalleryBlock';
 
 export default function BlockWrapper({ block, onUpdate, onAddNext, onDelete }) {
     const [hover, setHover] = useState(false);
@@ -39,6 +40,8 @@ export default function BlockWrapper({ block, onUpdate, onAddNext, onDelete }) {
                 return <BoardBlock block={block} onUpdate={onUpdate} />;
             case 'calendar':
                 return <CalendarBlock block={block} onUpdate={onUpdate} />;
+            case 'gallery':
+                return <GalleryBlock block={block} onUpdate={onUpdate} />;
             case 'text':
             default:
                 return <TextBlock block={block} onUpdate={onUpdate} onAddNext={onAddNext} />;
