@@ -50,6 +50,7 @@ export default function BlockWrapper({ block, onUpdate, onAddNext, onDelete }) {
             ref={setNodeRef}
             style={style}
             data-block-id={block.id}
+        data-block-type={block.type}
             className="group flex items-start gap-2 -ml-20 pl-2 pr-2 relative"
             onMouseEnter={() => setHover(true)}
             onMouseLeave={() => setHover(false)}

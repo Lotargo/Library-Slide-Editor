@@ -1,19 +1,16 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Bold, Italic, Scissors, Copy, Presentation, AlignLeft, AlignCenter, AlignRight, AlignJustify, Upload } from 'lucide-react';
-import { api } from '../api';
+import { Bold, Italic, Scissors, Copy, Presentation, AlignLeft, AlignCenter, AlignRight, AlignJustify, Ungroup } from 'lucide-react';
 
-export default function FloatingMenu({ onConvertToSlide }) {
+export default function FloatingMenu({ onConvertToSlide, onUngroup }) {
     const [position, setPosition] = useState(null);
+    const [slideId, setSlideId] = useState(null);
     const menuRef = useRef(null);
-    const fileInputRef = useRef(null);
-    const savedRange = useRef(null);
 
     useEffect(() => {
         const handleSelection = () => {
             const selection = window.getSelection();
 
-            // Hide if no selection or collapsed
             if (!selection || selection.isCollapsed || selection.toString().trim() === '') {
                 setPosition(null);
                 return;
@@ -25,6 +22,16 @@ export default function FloatingMenu({ onConvertToSlide }) {
             if (rect.width === 0 && rect.height === 0) {
                  setPosition(null);
                  return;
+            }
+
+            // Check if inside slide
+            let el = range.commonAncestorContainer;
+            if (el.nodeType === 3) el = el.parentElement;
+            const slide = el.closest('[data-block-type="slide_wrapper"]');
+            if (slide) {
+                setSlideId(slide.getAttribute('data-block-id'));
+            } else {
+                setSlideId(null);
             }
 
             setPosition({
@@ -44,56 +51,6 @@ export default function FloatingMenu({ onConvertToSlide }) {
         document.execCommand(cmd, false, null);
     };
 
-    const triggerFileUpload = () => {
-        const selection = window.getSelection();
-        if (selection && selection.rangeCount > 0) {
-            savedRange.current = selection.getRangeAt(0);
-        }
-        fileInputRef.current?.click();
-    };
-
-    const handleFileChange = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-
-        try {
-            const data = await api.uploadFile(file);
-
-            // Restore selection
-            if (savedRange.current) {
-                const selection = window.getSelection();
-                selection.removeAllRanges();
-                selection.addRange(savedRange.current);
-            }
-
-            const isImage = file.type.startsWith('image/');
-            let html = '';
-            if (isImage) {
-                 html = `<img src="${data.url}" alt="${data.filename}" style="max-width: 100%; height: auto; display: inline-block;" />`;
-            } else {
-                 // Insert a link. We wrap the selection or insert at selection?
-                 // insertHTML replaces selection with HTML.
-                 // So if I selected "text", it gets replaced by the link.
-                 // If I want to KEEP the text as the link text?
-                 // If I uploaded a file, usually the file HAS a name.
-                 // If I select "Here is the report" and upload "report.pdf".
-                 // Do I want <a href...>report.pdf</a> or <a href...>Here is the report</a>?
-                 // User said: "others will be as attached objects in text".
-                 // Usually implies an object with filename.
-                 // So I will use filename.
-                 html = `<a href="${data.url}" target="_blank" class="text-blue-600 underline hover:text-blue-800 mx-1" contenteditable="false">${data.filename}</a>`;
-            }
-
-            document.execCommand('insertHTML', false, html);
-            setPosition(null);
-        } catch (err) {
-            console.error(err);
-            alert("Upload failed");
-        }
-
-        e.target.value = '';
-    };
-
     if (!position) return null;
 
     return createPortal(
@@ -101,16 +58,29 @@ export default function FloatingMenu({ onConvertToSlide }) {
             ref={menuRef}
             className="fixed z-50 bg-white shadow-xl border border-gray-200 rounded-lg p-1.5 flex items-center gap-1 animate-in fade-in zoom-in duration-200"
             style={{ top: position.top, left: position.left, transform: 'translateX(-50%)' }}
-            onMouseDown={(e) => e.preventDefault()} // Prevent losing selection/focus
+            onMouseDown={(e) => e.preventDefault()}
         >
-             <button
-                onClick={onConvertToSlide}
-                className="p-1.5 hover:bg-gray-100 rounded flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-blue-600"
-                title="Convert to Slide"
-             >
-                <Presentation size={18} />
-                <span className="text-xs">Slide</span>
-             </button>
+             {!slideId && (
+                 <button
+                    onClick={onConvertToSlide}
+                    className="p-1.5 hover:bg-gray-100 rounded flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-blue-600"
+                    title="Convert to Slide"
+                 >
+                    <Presentation size={18} />
+                    <span className="text-xs">Slide</span>
+                 </button>
+             )}
+             {slideId && (
+                 <button
+                    onClick={() => onUngroup(slideId)}
+                    className="p-1.5 hover:bg-gray-100 rounded flex items-center gap-1 text-sm font-medium text-gray-700 hover:text-red-600"
+                    title="Ungroup Slide"
+                 >
+                    <Ungroup size={18} />
+                    <span className="text-xs">Ungroup</span>
+                 </button>
+             )}
+
              <div className="w-px h-5 bg-gray-200 mx-1"></div>
 
              <button onClick={() => handleFormat('bold')} className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-black" title="Bold">
@@ -143,13 +113,6 @@ export default function FloatingMenu({ onConvertToSlide }) {
              <button onClick={() => handleFormat('copy')} className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-black" title="Copy">
                  <Copy size={18}/>
              </button>
-
-             <div className="w-px h-5 bg-gray-200 mx-1"></div>
-
-             <button onClick={triggerFileUpload} className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-blue-600" title="Import Attachment">
-                 <Upload size={18}/>
-             </button>
-             <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" />
         </div>,
         document.body
     );
