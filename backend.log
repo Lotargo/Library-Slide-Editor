@@ -1,2 +1,9 @@
 Watching for file changes with StatReloader
 [20/Dec/2025 20:15:01] "POST /api/upload HTTP/1.1" 200 131
+[20/Dec/2025 20:29:44] "POST /api/workspaces HTTP/1.1" 200 144
+[20/Dec/2025 20:29:44] "POST /api/workspaces/694707384bd3c253a527998c/pages HTTP/1.1" 200 203
+[20/Dec/2025 20:29:44] "PUT /api/pages/694707384bd3c253a527998d HTTP/1.1" 200 347
+[20/Dec/2025 20:29:49] "GET /api/workspaces HTTP/1.1" 200 453
+[20/Dec/2025 20:29:49] "GET /api/pages/694707384bd3c253a527998d HTTP/1.1" 200 347
+[20/Dec/2025 20:29:49] "GET /api/workspaces HTTP/1.1" 200 453
+[20/Dec/2025 20:29:49] "GET /api/pages/694707384bd3c253a527998d HTTP/1.1" 200 347
