@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Bold, Italic, Scissors, Copy, Presentation, AlignLeft, AlignCenter, AlignRight, AlignJustify, Ungroup } from 'lucide-react';
+import { Bold, Italic, Underline, Scissors, Copy, Presentation, AlignLeft, AlignCenter, AlignRight, AlignJustify, Ungroup } from 'lucide-react';
 
 export default function FloatingMenu({ onConvertToSlide, onUngroup }) {
     const [position, setPosition] = useState(null);
@@ -88,6 +88,9 @@ export default function FloatingMenu({ onConvertToSlide, onUngroup }) {
              </button>
              <button onClick={() => handleFormat('italic')} className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-black" title="Italic">
                  <Italic size={18}/>
+             </button>
+             <button onClick={() => handleFormat('underline')} className="p-1.5 hover:bg-gray-100 rounded text-gray-600 hover:text-black" title="Underline">
+                 <Underline size={18}/>
              </button>
 
              <div className="w-px h-5 bg-gray-200 mx-1"></div>

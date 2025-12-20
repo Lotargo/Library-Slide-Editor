@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Upload, Download, Image as ImageIcon, Maximize, Minimize } from 'lucide-react';
+import { Upload, Download, Image as ImageIcon, Maximize, Minimize, ClipboardPaste } from 'lucide-react';
 import { api } from '../api';
 import { exportSlideToPng, exportCanvasToPng, exportToPdf } from '../utils/exportHelper';
 
@@ -112,6 +112,26 @@ export default function ContextMenu({ onMoveToSlide, onExtractFromSlide }) {
         fileInputRef.current?.click();
     };
 
+    const handlePaste = async () => {
+        try {
+            const text = await navigator.clipboard.readText();
+            if (text) {
+                // We rely on the browser's focus or selection being preserved or restored.
+                // However, clicking the menu button might shift focus.
+                // But usually context menu implies we are operating on the context.
+                // If we use execCommand('insertText'), it works on the active element.
+                // The issue is if the context menu click blurred the editor.
+                // But usually createPortal keeps focus logic sane if we don't preventDefault/stopPropagation aggressively.
+                // Let's try direct insertion.
+                document.execCommand('insertText', false, text);
+            }
+            setPosition(null);
+        } catch (err) {
+            console.error("Paste failed:", err);
+            alert("Failed to read clipboard. Please ensure you have granted permission.");
+        }
+    };
+
     const handleMoveToSlide = () => {
         if (onMoveToSlide && targetBlockId) {
             onMoveToSlide(targetBlockId);
@@ -164,6 +184,14 @@ export default function ContextMenu({ onMoveToSlide, onExtractFromSlide }) {
             <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-100 mb-1">
                 Actions
             </div>
+            <button
+                onClick={handlePaste}
+                className="w-full text-left px-3 py-1.5 hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700"
+            >
+                <ClipboardPaste size={16} />
+                <span>Paste</span>
+            </button>
+
             <button
                 onClick={triggerUpload}
                 className="w-full text-left px-3 py-1.5 hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700"
