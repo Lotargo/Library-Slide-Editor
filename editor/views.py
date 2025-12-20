@@ -13,6 +13,7 @@ from django.conf import settings
 from django.core.files.base import ContentFile
 from PIL import Image
 from io import BytesIO
+import mimetypes
 
 def index(request):
     return render(request, 'editor/index.html')
@@ -129,33 +130,43 @@ def api_upload_file(request):
         url = settings.MEDIA_URL + 'uploads/' + filename
         thumbnail_url = url # Default to original
 
-        # Generate Thumbnail
-        try:
-            full_file_path = default_storage.path(real_path)
+        content_type, _ = mimetypes.guess_type(filename)
+        if not content_type:
+            content_type = f.content_type
 
-            with Image.open(full_file_path) as img:
-                # Convert to RGB (in case of RGBA/P)
-                if img.mode in ('RGBA', 'P'):
-                    img = img.convert('RGB')
+        # Generate Thumbnail only for images
+        if content_type and content_type.startswith('image/'):
+            try:
+                full_file_path = default_storage.path(real_path)
 
-                img.thumbnail((300, 300))
+                with Image.open(full_file_path) as img:
+                    # Convert to RGB (in case of RGBA/P)
+                    if img.mode in ('RGBA', 'P'):
+                        img = img.convert('RGB')
 
-                thumb_io = BytesIO()
-                img.save(thumb_io, format='JPEG', quality=70)
+                    img.thumbnail((300, 300))
 
-                thumb_filename = f"thumb_{filename}"
-                # Force .jpg extension for the thumbnail
-                thumb_filename = os.path.splitext(thumb_filename)[0] + '.jpg'
+                    thumb_io = BytesIO()
+                    img.save(thumb_io, format='JPEG', quality=70)
 
-                thumb_save_path = os.path.join('thumbnails', thumb_filename)
+                    thumb_filename = f"thumb_{filename}"
+                    # Force .jpg extension for the thumbnail
+                    thumb_filename = os.path.splitext(thumb_filename)[0] + '.jpg'
 
-                thumb_file = ContentFile(thumb_io.getvalue(), name=thumb_filename)
-                saved_thumb_path = default_storage.save(thumb_save_path, thumb_file)
-                thumb_real_name = os.path.basename(saved_thumb_path)
+                    thumb_save_path = os.path.join('thumbnails', thumb_filename)
 
-                thumbnail_url = settings.MEDIA_URL + 'thumbnails/' + thumb_real_name
-        except Exception as e:
-            print(f"Thumbnail generation failed: {e}")
+                    thumb_file = ContentFile(thumb_io.getvalue(), name=thumb_filename)
+                    saved_thumb_path = default_storage.save(thumb_save_path, thumb_file)
+                    thumb_real_name = os.path.basename(saved_thumb_path)
 
-        return JsonResponse({'url': url, 'filename': filename, 'thumbnail_url': thumbnail_url})
+                    thumbnail_url = settings.MEDIA_URL + 'thumbnails/' + thumb_real_name
+            except Exception as e:
+                print(f"Thumbnail generation failed: {e}")
+
+        return JsonResponse({
+            'url': url,
+            'filename': filename,
+            'thumbnail_url': thumbnail_url,
+            'content_type': content_type
+        })
     return JsonResponse({'error': 'Method not allowed'}, status=405)

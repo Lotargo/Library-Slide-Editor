@@ -113,22 +113,27 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
         const index = dragOverIndex === null ? blocks.length : dragOverIndex;
         setDragOverIndex(null);
 
-        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/'));
+        const files = Array.from(e.dataTransfer.files).filter(f => f.type.startsWith('image/') || f.type.startsWith('video/'));
         if (files.length === 0) return;
 
         // Init Progress
         setUploadProgress({ active: true, current: 0, total: files.length, index });
 
         const uploadedImages = [];
+        const uploadedVideos = [];
         let completed = 0;
 
         for (const file of files) {
             try {
                 const data = await api.uploadFile(file);
-                uploadedImages.push({
-                    url: data.url,
-                    thumbnail_url: data.thumbnail_url || data.url
-                });
+                if (file.type.startsWith('image/')) {
+                    uploadedImages.push({
+                        url: data.url,
+                        thumbnail_url: data.thumbnail_url || data.url
+                    });
+                } else if (file.type.startsWith('video/')) {
+                    uploadedVideos.push(data.url);
+                }
             } catch (err) {
                 console.error("Upload failed for file", file.name, err);
             }
@@ -136,8 +141,26 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
             setUploadProgress(prev => ({ ...prev, current: completed }));
         }
 
-        if (uploadedImages.length > 0) {
-            insertBlockAtIndex(index, 'gallery', uploadedImages);
+        // Batch insertion to prevent state race conditions
+        if (uploadedImages.length > 0 || uploadedVideos.length > 0) {
+            const newBlocks = [...blocks];
+            let insertPos = index;
+
+            if (uploadedImages.length > 0) {
+                const galleryBlock = { id: uuidv4(), type: 'gallery', content: uploadedImages };
+                newBlocks.splice(insertPos, 0, galleryBlock);
+                insertPos++;
+                setFocusId(galleryBlock.id);
+            }
+
+            for (const videoUrl of uploadedVideos) {
+                const videoBlock = { id: uuidv4(), type: 'video', content: videoUrl };
+                newBlocks.splice(insertPos, 0, videoBlock);
+                setFocusId(videoBlock.id); // Focus the last inserted
+                insertPos++;
+            }
+
+            onChange(newBlocks);
         }
 
         // Reset

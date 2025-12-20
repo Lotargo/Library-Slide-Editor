@@ -8,6 +8,7 @@ import TableBlock from './blocks/TableBlock';
 import BoardBlock from './blocks/BoardBlock';
 import CalendarBlock from './blocks/CalendarBlock';
 import GalleryBlock from './blocks/GalleryBlock';
+import VideoBlock from './blocks/VideoBlock';
 import MermaidBlock from './blocks/MermaidBlock';
 import CodeBlock from './blocks/CodeBlock';
 import DividerBlock from './blocks/DividerBlock';
@@ -47,6 +48,8 @@ export default function BlockWrapper({ block, onUpdate, onAddNext, onDelete, aut
                 return <CalendarBlock block={block} onUpdate={onUpdate} />;
             case 'gallery':
                 return <GalleryBlock block={block} onUpdate={onUpdate} />;
+            case 'video':
+                return <VideoBlock block={block} onUpdate={onUpdate} />;
             case 'mermaid':
                 return <MermaidBlock block={block} onUpdate={onUpdate} />;
             case 'code':
