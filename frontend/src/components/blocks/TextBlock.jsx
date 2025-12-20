@@ -25,43 +25,44 @@ export default function TextBlock({ block, onUpdate, onAddNext }) {
     const handleInput = (e) => {
         let content = e.target.innerHTML;
         const text = e.target.innerText; // Plain text for commands
+        const trimmedText = text.trim();
 
         // Simple Slash Commands (MVP)
-        if (text === '/slide') {
+        if (trimmedText === '/slide') {
             onUpdate({ type: 'slide_wrapper', children: [], content: undefined });
             return;
         }
-        if (text === '/table') {
+        if (trimmedText === '/table') {
             onUpdate({ type: 'table', content: undefined });
             return;
         }
-        if (text === '/board') {
+        if (trimmedText === '/board') {
             onUpdate({ type: 'board', content: undefined });
             return;
         }
-        if (text === '/calendar') {
+        if (trimmedText === '/calendar') {
             onUpdate({ type: 'calendar', content: undefined });
             return;
         }
-        if (text === '/mermaid') {
+        if (trimmedText === '/mermaid') {
              onUpdate({ type: 'mermaid', content: 'graph TD; A-->B;' });
              return;
         }
-        if (text === '/code') {
+        if (trimmedText === '/code') {
              onUpdate({ type: 'code', content: '' });
              return;
         }
-        if (text === '/divider') {
+        if (trimmedText === '/divider') {
              onUpdate({ type: 'divider', content: '' });
              return;
         }
-        if (text === '/quote') {
+        if (trimmedText === '/quote') {
             // Convert to quote block OR format current block
             // Let's use Quote Block for distinct styling
             onUpdate({ type: 'quote', content: '' });
             return;
         }
-        if (text === '/check' || text === '/todo') {
+        if (trimmedText === '/check' || trimmedText === '/todo') {
              onUpdate({ type: 'checklist', content: '' });
              return;
         }
@@ -78,7 +79,23 @@ export default function TextBlock({ block, onUpdate, onAddNext }) {
     };
 
     const handleKeyDown = (e) => {
+        // Handle triggers that might happen on 'Enter' (like Headers if user didn't type space?)
+        // Standard MD is space triggered. User might be confused.
+        // But let's check for 'Enter' logic just in case they want to convert line on Enter.
         if (e.key === 'Enter' && !e.shiftKey) {
+            // Before adding next, check if we should convert MD?
+            // E.g. "# Header<Enter>" -> Convert to H1 then add new block?
+            // Or just add new block.
+            // If the user typed "# Header" (no space), it stays text.
+            // If we want to be nice, we can check.
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+                 const range = selection.getRangeAt(0);
+                 const node = range.startContainer;
+                 // If text content starts with #, maybe convert?
+                 // But be careful not to annoy.
+            }
+
             e.preventDefault();
             onAddNext();
             return;
@@ -97,25 +114,34 @@ export default function TextBlock({ block, onUpdate, onAddNext }) {
                  const textBefore = node.textContent.slice(0, range.startOffset);
 
                  // Header: "# "
+                 // We relax the check: if text matches `#{1,6}` at start.
+                 // Actually, user might type `#` then space. `textBefore` ends with `#`.
                  if (textBefore.endsWith('#')) {
                       // Check if it is the start of the line
-                      // This is complex with contentEditable.
-                      // Let's assume if the text is JUST "#", we format.
-                      if (textBefore.trim() === '#') {
+                      const match = textBefore.match(/^#{1,6}$/);
+                      if (match) {
+                           const level = match[0].length;
                            e.preventDefault();
-                           document.execCommand('formatBlock', false, 'H1');
-                           // Remove the #
-                           // Exec command usually wraps.
-                           // We need to delete the "#" text.
-                           node.textContent = node.textContent.slice(0, range.startOffset - 1) + node.textContent.slice(range.startOffset);
+                           // Execute format
+                           // H1, H2, ...
+                           const tag = `H${level}`;
+                           document.execCommand('formatBlock', false, tag);
+
+                           // Remove the hashes
+                           // The node text is likely just "###".
+                           // We need to clear it?
+                           // Actually `formatBlock` keeps content.
+                           // We want to remove the hashes.
+                           // `node` is the text node.
+                           // `range.startOffset` is length of textBefore (which is just hashes).
+                           // So we remove valid range.
+                           node.textContent = node.textContent.slice(range.startOffset);
                            return;
                       }
-                       if (textBefore.trim() === '##') {
-                           e.preventDefault();
-                           document.execCommand('formatBlock', false, 'H2');
-                           node.textContent = node.textContent.slice(0, range.startOffset - 2) + node.textContent.slice(range.startOffset);
-                           return;
-                      }
+                 }
+
+                 // Handle Blockquote ">"
+                 if (textBefore.endsWith('>')) {
                       if (textBefore.trim() === '>') {
                            e.preventDefault();
                            // formatBlock BLOCKQUOTE is standard
@@ -186,6 +212,12 @@ export default function TextBlock({ block, onUpdate, onAddNext }) {
              if (node.nodeType === Node.TEXT_NODE) {
                  const textBefore = node.textContent.slice(0, range.startOffset);
                  // Check for `$$...$` (since we are about to add the last $)
+                 // Also handle case where user pastes `$$...$$`? No, pasting is separate.
+                 // This handles typing the CLOSING `$` of `$$formula$$`.
+                 // Regex: look for `$$` followed by anything not `$` followed by `$` (last char before cursor).
+                 // Actually, textBefore includes the first `$` of the closing pair?
+                 // No, we haven't typed the last `$` yet. `textBefore` ends with `$`.
+                 // So we have `$$formula$`. We type `$`.
                  const match = textBefore.match(/\$\$([^\$]+)\$$/);
                  if (match) {
                      e.preventDefault(); // Prevent inserting the last $ normally
@@ -219,6 +251,14 @@ export default function TextBlock({ block, onUpdate, onAddNext }) {
              }
         }
     };
+
+    // Also handle pasting or loose text that might contain markdown/latex
+    // We can do this on Blur or on Input (debounced).
+    // For MVP, let's just make sure "Space" works robustly.
+    // The user issue "not rendering on the fly" might mean they expect pasting to work.
+    // Let's add a check on Input to detect `$$...$$` if the user finished typing it without us catching it?
+    // Or if they paste it.
+    // But `handleInput` is messy.
 
     return (
         <div
