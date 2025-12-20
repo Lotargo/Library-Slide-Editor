@@ -8,6 +8,11 @@ import TableBlock from './blocks/TableBlock';
 import BoardBlock from './blocks/BoardBlock';
 import CalendarBlock from './blocks/CalendarBlock';
 import GalleryBlock from './blocks/GalleryBlock';
+import MermaidBlock from './blocks/MermaidBlock';
+import CodeBlock from './blocks/CodeBlock';
+import DividerBlock from './blocks/DividerBlock';
+import QuoteBlock from './blocks/QuoteBlock';
+import ChecklistBlock from './blocks/ChecklistBlock';
 
 export default function BlockWrapper({ block, onUpdate, onAddNext, onDelete }) {
     const [hover, setHover] = useState(false);
@@ -42,6 +47,16 @@ export default function BlockWrapper({ block, onUpdate, onAddNext, onDelete }) {
                 return <CalendarBlock block={block} onUpdate={onUpdate} />;
             case 'gallery':
                 return <GalleryBlock block={block} onUpdate={onUpdate} />;
+            case 'mermaid':
+                return <MermaidBlock block={block} onUpdate={onUpdate} />;
+            case 'code':
+                return <CodeBlock block={block} onUpdate={onUpdate} />;
+            case 'divider':
+                return <DividerBlock block={block} onUpdate={onUpdate} />;
+            case 'quote':
+                return <QuoteBlock block={block} onUpdate={onUpdate} onAddNext={onAddNext} />;
+            case 'checklist':
+                return <ChecklistBlock block={block} onUpdate={onUpdate} onAddNext={onAddNext} />;
             case 'text':
             default:
                 return <TextBlock block={block} onUpdate={onUpdate} onAddNext={onAddNext} />;

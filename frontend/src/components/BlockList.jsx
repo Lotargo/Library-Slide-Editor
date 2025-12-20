@@ -33,6 +33,29 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
         onChange(newBlocks);
     }
 
+    // Listen for custom insert events (e.g. from ContextMenu)
+    React.useEffect(() => {
+        const handleInsert = (e) => {
+            const { afterId, type, content } = e.detail;
+            // Only handle if we contain the afterId (or if afterId is null and we are the root/active list?)
+            // This is tricky if we have nested BlockLists (slides).
+            // We check if 'afterId' exists in our blocks.
+            // OR if afterId is null, maybe append to end?
+
+            // If we are a nested list (listId !== 'root'), we should be careful.
+            // But usually the user clicks ON a block.
+            if (!afterId) return;
+
+            const index = blocks.findIndex(b => b.id === afterId);
+            if (index !== -1) {
+                addBlock(afterId, type, content);
+            }
+        };
+
+        window.addEventListener('editor:insert-block', handleInsert);
+        return () => window.removeEventListener('editor:insert-block', handleInsert);
+    }, [blocks, onChange]); // Re-bind when blocks change so we have latest state
+
     const deleteBlock = (id) => {
         const newBlocks = blocks.filter(b => b.id !== id);
         onChange(newBlocks);
