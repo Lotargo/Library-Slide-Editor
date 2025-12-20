@@ -16,16 +16,12 @@ export default function CodeBlock({ block, onUpdate }) {
     }, [block.content]);
 
     const handleChange = (e) => {
-        // Simple textarea for editing code is more robust than contentEditable with Prism
-        // But to make it look like a block, we can use a textarea that styles itself?
-        // Or separate View/Edit?
-        // Let's use a textarea for editing to avoid cursor jumping with syntax highlighting re-renders.
         onUpdate({ content: e.target.value });
     };
 
     return (
         <div className="relative group rounded-md overflow-hidden bg-[#2d2d2d] my-2 text-sm font-mono border border-gray-700">
-            <div className="absolute top-2 right-2 text-xs text-gray-500 select-none">
+            <div className="absolute top-2 right-2 text-xs text-gray-500 select-none z-20">
                 Code
             </div>
             <textarea
@@ -36,8 +32,10 @@ export default function CodeBlock({ block, onUpdate }) {
                 style={{
                     color: 'transparent',
                     caretColor: 'white',
-                    fontFamily: 'monospace', // Ensure matches Prism
-                    fontSize: '0.875rem',    // text-sm
+                    fontFamily: 'monospace',
+                    fontSize: '0.875rem',
+                    whiteSpace: 'pre-wrap',
+                    overflowWrap: 'break-word'
                 }}
             />
             <style>{`
@@ -50,8 +48,17 @@ export default function CodeBlock({ block, onUpdate }) {
             <pre
                 className="absolute top-0 left-0 w-full h-full p-4 pointer-events-none m-0 overflow-hidden leading-normal"
                 aria-hidden="true"
+                style={{
+                    whiteSpace: 'pre-wrap',
+                    overflowWrap: 'break-word'
+                }}
             >
-                <code ref={codeRef} className="language-javascript" style={{ fontFamily: 'monospace', fontSize: '0.875rem' }}>
+                <code ref={codeRef} className="language-javascript" style={{
+                    fontFamily: 'monospace',
+                    fontSize: '0.875rem',
+                    whiteSpace: 'pre-wrap',
+                    overflowWrap: 'break-word'
+                }}>
                     {block.content || ' '}
                 </code>
             </pre>

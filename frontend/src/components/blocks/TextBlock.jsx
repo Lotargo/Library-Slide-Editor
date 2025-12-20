@@ -53,11 +53,11 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
     };
 
     const handleInput = (e) => {
-        let content = e.target.innerHTML;
         const text = e.target.innerText;
+        const trimmed = text.trim();
 
-        if (text.startsWith('/')) {
-            const query = text.substring(1).trim();
+        if (trimmed.startsWith('/')) {
+            const query = trimmed.substring(1).trim();
             if (!query.includes(' ') && !query.includes('\n')) {
                  setMenuQuery(query);
                  setShowMenu(true);
@@ -107,6 +107,21 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
             e.preventDefault();
             onAddNext();
             return;
+        }
+
+        // Handle Backtick wrapping for selection
+        if (e.key === '`') {
+             const selection = window.getSelection();
+             if (selection.rangeCount > 0 && !selection.isCollapsed) {
+                 e.preventDefault();
+                 const range = selection.getRangeAt(0);
+                 const selectedText = range.toString();
+
+                 // Wrap in code tag with style
+                 const codeHtml = `<code style="color: #e83e8c; background-color: rgba(0,0,0,0.05); border-radius: 3px; padding: 0 2px; font-family: monospace;">${escapeHtml(selectedText)}</code>`;
+                 document.execCommand('insertHTML', false, codeHtml);
+                 return;
+             }
         }
 
         if (e.key === ' ') {
@@ -171,6 +186,24 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
                  if (italicMatchUnderscore) {
                      e.preventDefault();
                      replaceWithFormat(selection, node, range.startOffset - italicMatchUnderscore[0].length, range.startOffset, italicMatchUnderscore[1], 'italic');
+                     return;
+                 }
+
+                 const codeMatch = textBefore.match(/`([^`]+)`$/);
+                 if (codeMatch) {
+                     e.preventDefault();
+                     const content = codeMatch[1];
+                     const codeHtml = `<code style="color: #e83e8c; background-color: rgba(0,0,0,0.05); border-radius: 3px; padding: 0 2px; font-family: monospace;">${escapeHtml(content)}</code>`;
+
+                     // Custom replace logic for HTML insertion
+                     const newRange = document.createRange();
+                     const start = range.startOffset - codeMatch[0].length;
+                     newRange.setStart(node, start);
+                     newRange.setEnd(node, range.startOffset);
+                     selection.removeAllRanges();
+                     selection.addRange(newRange);
+
+                     document.execCommand('insertHTML', false, codeHtml + '&nbsp;');
                      return;
                  }
             }
@@ -268,7 +301,8 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
             .replace(/\*\*([^\*]+)\*\*/g, '<b>$1</b>')
             .replace(/\*([^\*]+)\*/g, '<i>$1</i>')
             .replace(/_([^_]+)_/g, '<i>$1</i>')
-            .replace(/~~([^~]+)~~/g, '<s>$1</s>');
+            .replace(/~~([^~]+)~~/g, '<s>$1</s>')
+            .replace(/`([^`]+)`/g, '<code style="color: #e83e8c; background-color: rgba(0,0,0,0.05); border-radius: 3px; padding: 0 2px; font-family: monospace;">$1</code>');
 
         document.execCommand('insertHTML', false, processed);
     };

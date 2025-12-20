@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Upload, Download, Image as ImageIcon, Maximize, Minimize, ClipboardPaste } from 'lucide-react';
+import { Upload, Download, Image as ImageIcon, Maximize, Minimize, ClipboardPaste, Trash2 } from 'lucide-react';
 import { api } from '../api';
 import { exportSlideToPng, exportCanvasToPng, exportToPdf } from '../utils/exportHelper';
 
@@ -116,13 +116,6 @@ export default function ContextMenu({ onMoveToSlide, onExtractFromSlide }) {
         try {
             const text = await navigator.clipboard.readText();
             if (text) {
-                // We rely on the browser's focus or selection being preserved or restored.
-                // However, clicking the menu button might shift focus.
-                // But usually context menu implies we are operating on the context.
-                // If we use execCommand('insertText'), it works on the active element.
-                // The issue is if the context menu click blurred the editor.
-                // But usually createPortal keeps focus logic sane if we don't preventDefault/stopPropagation aggressively.
-                // Let's try direct insertion.
                 document.execCommand('insertText', false, text);
             }
             setPosition(null);
@@ -147,27 +140,18 @@ export default function ContextMenu({ onMoveToSlide, onExtractFromSlide }) {
     };
 
     const handleInsertMermaid = () => {
-        // We need a way to insert a block.
-        // ContextMenu is usually triggered on an existing block.
-        // If we have `onAddNext` accessible here it would be great, but we don't.
-        // However, ContextMenu is usually global.
-        // The most robust way is to use a global event or pass a handler down.
-        // But `ContextMenu` props are `onMoveToSlide`, `onExtractFromSlide`.
-        // It seems we can't easily "Add Block" from here without passing more props.
-        // Wait, the user said: "we can add it again via Right Click... we already have a popup for this".
-        // If I can't add a new block easily, maybe I can "Convert" the current block?
-        // Or I should dispatch an event that the Editor listens to?
-
-        // Let's assume we can dispatch a custom event that `PageEditor` or `BlockList` listens to.
-        // Or simply, since we can't easily add *after* a specific block without context,
-        // maybe we just add to the end or replace current if empty?
-
-        // BETTER APPROACH: The user is clicking on the EDITOR.
-        // If we are over a block, we know `targetBlockId`.
-        // We can emit an event 'insert-block' with detail { afterId: targetBlockId, type: 'mermaid' }
         window.dispatchEvent(new CustomEvent('editor:insert-block', {
             detail: { afterId: targetBlockId, type: 'mermaid' }
         }));
+        setPosition(null);
+    };
+
+    const handleDelete = () => {
+        if (targetBlockId) {
+            window.dispatchEvent(new CustomEvent('editor:delete-block', {
+                detail: { id: targetBlockId }
+            }));
+        }
         setPosition(null);
     };
 
@@ -229,6 +213,13 @@ export default function ContextMenu({ onMoveToSlide, onExtractFromSlide }) {
                             <span>Move to Slide</span>
                         </button>
                      )}
+                     <button
+                        onClick={handleDelete}
+                        className="w-full text-left px-3 py-1.5 hover:bg-red-50 text-red-600 flex items-center gap-2 text-sm"
+                    >
+                        <Trash2 size={16} />
+                        <span>Delete Block</span>
+                    </button>
                 </>
             )}
 
