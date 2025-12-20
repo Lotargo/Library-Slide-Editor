@@ -48,6 +48,17 @@
 
 ## 🗺 Этапы Развития (Phases)
 
+### Phase 0: Infrastructure & Standardization (MVP to Production)
+
+*Проблема:* Текущий проект имеет признаки "Хакатон-кода" (локальный запуск через скрипты, отсутствие изоляции, упрощенная архитектура).
+
+**Решение: Docker Development Environment**
+1.  **Containerization:** Переход от `poetry run` к полному `docker-compose`.
+    *   Сервисы: Backend (Django), DB (Mongo), VectorDB (Qdrant), Frontend (Node/Nginx).
+    *   Volume Mounts: Для горячей перезагрузки (Hot Reload) кода внутри контейнеров.
+2.  **DevOps:** Настройка `setup_infra` скриптов для работы с контейнерами, а не локальным окружением.
+    *   Это критически важно для работы "Триады" (тестирование `pwsh` внутри Linux-окружения).
+
 ### Phase 1: Core Optimization (Frontend Virtualization)
 
 *Проблема:* Рекурсивный рендеринг блоков (`BlockList` внутри блоков) создает глубокое DOM-дерево.
@@ -108,6 +119,6 @@
 
 ## 🛠 Next Steps (Immediate Actions)
 
-1.  [Frontend] Прототипирование плоского стейта для `BlockList`.
-2.  [Backend] Добавление `pwsh` в `Dockerfile`.
+1.  [Infra] Создание `docker-compose.dev.yml` для полного стека.
+2.  [Frontend] Прототипирование плоского стейта для `BlockList`.
 3.  [Backend] Подготовка структуры проекта для Rust-модулей (`PyO3`).
