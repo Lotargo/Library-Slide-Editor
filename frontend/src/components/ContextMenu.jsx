@@ -79,8 +79,9 @@ export default function ContextMenu() {
     const handleExport = (format) => {
         const id = targetSlideId ? `slide-content-${targetSlideId}` : 'page-content-root';
         const name = targetSlideId ? 'slide' : 'page';
-        if (format === 'png') exportToPng(id, name);
-        if (format === 'pdf') exportToPdf(id, name);
+        const type = targetSlideId ? 'slide' : 'page';
+        if (format === 'png') exportToPng(id, name, type);
+        if (format === 'pdf') exportToPdf(id, name, type);
         setPosition(null);
     };
 
