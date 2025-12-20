@@ -43,20 +43,7 @@ export default function CodeBlock({ block, onUpdate }) {
             <style>{`
                 .code-editor-textarea::selection {
                     background-color: rgba(255, 255, 255, 0.2);
-                    color: transparent; /* Keep text transparent so underlying syntax highlight shows? No, selection makes text visible usually. */
-                }
-                /* Actually, if text is transparent, we can't see it in selection.
-                   If we make it white in selection, we lose syntax highlighting.
-                   VS Code handles this by drawing selection BEHIND text.
-                   Since textarea is ON TOP, its selection background covers the Pre underneath?
-                   Yes, standard selection background is opaque-ish.
-                   Ideally we want transparent background for selection?
-                   Or we rely on the caret.
-                   Let's set text color to white on selection?
-                */
-                .code-editor-textarea::selection {
-                     background: rgba(255, 255, 255, 0.2);
-                     color: white; /* Fallback to white text on selection */
+                    color: transparent;
                 }
             `}</style>
             {/* Syntax Highlight Overlay */}
