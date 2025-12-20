@@ -38,6 +38,11 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
         setFocusId(newBlock.id);
     }
 
+    const deleteBlock = (id) => {
+        const newBlocks = blocks.filter(b => b.id !== id);
+        onChange(newBlocks);
+    };
+
     // Listen for custom insert events (e.g. from ContextMenu)
     React.useEffect(() => {
         const handleInsert = (e) => {
@@ -50,14 +55,22 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
             }
         };
 
-        window.addEventListener('editor:insert-block', handleInsert);
-        return () => window.removeEventListener('editor:insert-block', handleInsert);
-    }, [blocks, onChange]);
+        const handleDelete = (e) => {
+            const { id } = e.detail;
+            if (!id) return;
+            // Check if block belongs to this list
+            if (blocks.some(b => b.id === id)) {
+                deleteBlock(id);
+            }
+        };
 
-    const deleteBlock = (id) => {
-        const newBlocks = blocks.filter(b => b.id !== id);
-        onChange(newBlocks);
-    };
+        window.addEventListener('editor:insert-block', handleInsert);
+        window.addEventListener('editor:delete-block', handleDelete);
+        return () => {
+            window.removeEventListener('editor:insert-block', handleInsert);
+            window.removeEventListener('editor:delete-block', handleDelete);
+        };
+    }, [blocks, onChange]);
 
     // --- File Drag & Drop Handlers ---
 
