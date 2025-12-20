@@ -5,20 +5,23 @@ export default function TextBlock({ block, onUpdate, onAddNext }) {
     const ref = useRef(null);
 
     useEffect(() => {
-        // Set initial content
         if (ref.current) {
-            // Check if we need to re-render math on initial load?
-            // The content is HTML, so if it was saved with rendered math, it shows.
-            // If it has $$..$$, we might want to process it.
             ref.current.innerHTML = block.content || '';
         }
     }, []);
 
+    // Helper to escape HTML special characters
+    const escapeHtml = (text) => {
+        return text
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    };
+
     // Helper to process LaTeX
     const processLatex = (html) => {
-        // Simple regex to find $$...$$ and render it
-        // Note: handling cursor position after replacement is tough in contentEditable.
-        // We will do "render on demand" logic or just use replacement when triggered.
         return html;
     };
 
@@ -57,8 +60,6 @@ export default function TextBlock({ block, onUpdate, onAddNext }) {
              return;
         }
         if (trimmedText === '/quote') {
-            // Convert to quote block OR format current block
-            // Let's use Quote Block for distinct styling
             onUpdate({ type: 'quote', content: '' });
             return;
         }
@@ -67,84 +68,185 @@ export default function TextBlock({ block, onUpdate, onAddNext }) {
              return;
         }
 
-        // Markdown Shortcuts logic
-        // We look for patterns at the start of the block or after space.
-        // Note: Doing this on `input` can disrupt cursor. We should check if the last char was a trigger.
-        // For MVP, we use specific triggers.
-
-        // This is a naive implementation. For robust MD, use a library.
-        // But for "bold" via `**`, we can try to intercept.
-
         onUpdate({ content: e.target.innerHTML });
     };
 
-    const handleKeyDown = (e) => {
-        // Handle triggers that might happen on 'Enter' (like Headers if user didn't type space?)
-        // Standard MD is space triggered. User might be confused.
-        // But let's check for 'Enter' logic just in case they want to convert line on Enter.
-        if (e.key === 'Enter' && !e.shiftKey) {
-            // Before adding next, check if we should convert MD?
-            // E.g. "# Header<Enter>" -> Convert to H1 then add new block?
-            // Or just add new block.
-            // If the user typed "# Header" (no space), it stays text.
-            // If we want to be nice, we can check.
-            const selection = window.getSelection();
-            if (selection.rangeCount > 0) {
-                 const range = selection.getRangeAt(0);
-                 const node = range.startContainer;
-                 // If text content starts with #, maybe convert?
-                 // But be careful not to annoy.
-            }
+    const handlePaste = (e) => {
+        e.preventDefault();
+        const text = e.clipboardData.getData('text/plain');
 
+        let processed = escapeHtml(text)
+            .replace(/\$\$([^\$]+)\$\$/g, (match, latex) => {
+                // Note: latex here is already escaped by escapeHtml above.
+                // We need unescaped latex for renderToString?
+                // Yes. katex expects raw latex.
+                // But we escaped it first!
+                // We should unescape it for katex, or change order.
+                // Changing order is better.
+                return match;
+            });
+
+        // Redoing logic:
+        // We want to process patterns on the RAW text, then escape the REST.
+        // But replacing patterns is easier on raw text.
+        // If we replace `**bold**` -> `<b>bold</b>`, we want `bold` to be escaped?
+        // Yes.
+
+        // Let's use a tokenizer approach or simpler: replace with callbacks that escape content.
+
+        processed = text.replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;")
+             // 1. LaTeX $$...$$
+            .replace(/\$\$([^\$]+)\$\$/g, (match, latex) => {
+                // `latex` here is HTML-escaped because we did replace above.
+                // We need to unescape for KaTeX?
+                // Example: text is `$$a < b$$`.
+                // Escaped: `$$a &lt; b$$`.
+                // match is `$$a &lt; b$$`. latex is `a &lt; b`.
+                // KaTeX might choke on `&lt;`.
+
+                // Better approach: Don't escape everything first.
+                // Escape only parts that are NOT replaced.
+                // Or: match patterns on raw text, capture content, escape content, render.
+
+                // But we must prevent XSS in the text that is NOT a pattern.
+                return match;
+            });
+
+        // Correct approach:
+        // 1. Split text by patterns? Hard.
+        // 2. Escape everything.
+        // 3. Unescape patterns?
+
+        // Let's try:
+        // iterate over regex matches.
+        // But JS regex replace is good.
+
+        // Let's go back to basics.
+        // We can match patterns in raw text.
+        // For each match, we process it.
+        // For non-matches, we escape.
+        // But `replace` string logic is sequential.
+
+        // Helper to unescape just for KaTeX?
+        const unescapeHtml = (html) => {
+             const doc = new DOMParser().parseFromString(html, "text/html");
+             return doc.documentElement.textContent;
+        }
+
+        // But `DOMParser` might not be available or slow? It is available in browser.
+        // But let's stick to string manip if possible.
+
+        // Let's restart the handlePaste logic to be clean and safe.
+        // We will execute replacements on the escaped text?
+        // If user types `**<script>**`, we want `<b>&lt;script&gt;</b>`.
+        // So:
+        // 1. Escape HTML. `**<script>**` -> `**&lt;script&gt;**`.
+        // 2. Run regex. `\*\*([^\*]+)\*\*`.
+        // It matches `&lt;script&gt;`.
+        // We wrap it in `<b>`. Result: `<b>&lt;script&gt;</b>`.
+        // This renders as bold text "<script>". Safe.
+
+        // Problem: LaTeX `$$a < b$$` -> `$$a &lt; b$$`.
+        // KaTeX needs `a < b`.
+        // We need to unescape the content passed to KaTeX.
+        // `a &lt; b` -> `a < b`.
+        // Simple string replace for the entities we just added.
+
+        const unescapeForKatex = (str) => {
+            return str
+                .replace(/&lt;/g, "<")
+                .replace(/&gt;/g, ">")
+                .replace(/&amp;/g, "&") // Last to avoid double decoding
+                .replace(/&quot;/g, '"')
+                .replace(/&#039;/g, "'");
+        };
+
+        processed = escapeHtml(text)
+            .replace(/\$\$([^\$]+)\$\$/g, (match, latex) => {
+                const rawLatex = unescapeForKatex(latex);
+                try {
+                    const rendered = katex.renderToString(rawLatex, { throwOnError: false });
+                    // We need `data-latex` to handle XSS. `latex` variable here is the ESCAPED version (from step 1).
+                    // So `latex` is `a &lt; b`.
+                    // data-latex="a &lt; b" is safe.
+                    // If raw was `"` -> escaped `&quot;`. data-latex="&quot;" is safe.
+                    return `<span contenteditable="false" class="katex-render" data-latex="${latex}">${rendered}</span>&nbsp;`;
+                } catch (err) {
+                    return match;
+                }
+            })
+            .replace(/\*\*([^\*]+)\*\*/g, '<b>$1</b>')
+            .replace(/\*([^\*]+)\*/g, '<i>$1</i>')
+            .replace(/_([^_]+)_/g, '<i>$1</i>')
+            .replace(/~~([^~]+)~~/g, '<s>$1</s>');
+
+        document.execCommand('insertHTML', false, processed);
+    };
+
+    const replaceWithFormat = (selection, node, start, end, innerText, command) => {
+        const newRange = document.createRange();
+        newRange.setStart(node, start);
+        newRange.setEnd(node, end);
+        selection.removeAllRanges();
+        selection.addRange(newRange);
+
+        // Replace with text
+        document.execCommand('insertText', false, innerText);
+
+        const anchorNode = selection.anchorNode;
+        const anchorOffset = selection.anchorOffset;
+
+        if (!anchorNode) return;
+
+        const reSelectRange = document.createRange();
+        const newStart = Math.max(0, anchorOffset - innerText.length);
+        reSelectRange.setStart(anchorNode, newStart);
+        reSelectRange.setEnd(anchorNode, anchorOffset);
+
+        selection.removeAllRanges();
+        selection.addRange(reSelectRange);
+
+        document.execCommand(command);
+        selection.collapseToEnd();
+        document.execCommand('insertText', false, '\u00A0');
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             onAddNext();
             return;
         }
 
         if (e.key === ' ') {
-            // Check for Markdown shortcuts that trigger on space
             const selection = window.getSelection();
             if (!selection.rangeCount) return;
 
             const range = selection.getRangeAt(0);
             const node = range.startContainer;
 
-            // Only if we are in a text node
             if (node.nodeType === Node.TEXT_NODE) {
                  const textBefore = node.textContent.slice(0, range.startOffset);
 
-                 // Header: "# "
-                 // We relax the check: if text matches `#{1,6}` at start.
-                 // Actually, user might type `#` then space. `textBefore` ends with `#`.
                  if (textBefore.endsWith('#')) {
-                      // Check if it is the start of the line
                       const match = textBefore.match(/^#{1,6}$/);
                       if (match) {
                            const level = match[0].length;
                            e.preventDefault();
-                           // Execute format
-                           // H1, H2, ...
                            const tag = `H${level}`;
                            document.execCommand('formatBlock', false, tag);
-
-                           // Remove the hashes
-                           // The node text is likely just "###".
-                           // We need to clear it?
-                           // Actually `formatBlock` keeps content.
-                           // We want to remove the hashes.
-                           // `node` is the text node.
-                           // `range.startOffset` is length of textBefore (which is just hashes).
-                           // So we remove valid range.
                            node.textContent = node.textContent.slice(range.startOffset);
                            return;
                       }
                  }
 
-                 // Handle Blockquote ">"
                  if (textBefore.endsWith('>')) {
                       if (textBefore.trim() === '>') {
                            e.preventDefault();
-                           // formatBlock BLOCKQUOTE is standard
                            document.execCommand('formatBlock', false, 'BLOCKQUOTE');
                            node.textContent = node.textContent.slice(0, range.startOffset - 1) + node.textContent.slice(range.startOffset);
                            return;
@@ -157,73 +259,47 @@ export default function TextBlock({ block, onUpdate, onAddNext }) {
                       }
                  }
 
-                 // LaTeX: "$$formula$$"
-                 // Check if we just finished a $$ pattern?
-                 // Or better, check for `$$` ... `$$` and replace?
-                 // Let's look for "$$ ... $$" ending right now.
-                 // This is tricky.
-
-                 // Alternative: Check for `**bold**`
-                 // Regex: /\*\*([^*]+)\*\*$/
                  const boldMatch = textBefore.match(/\*\*([^*]+)\*\*$/);
                  if (boldMatch) {
                      e.preventDefault();
-                     const matchText = boldMatch[0]; // "**word**"
-                     const innerText = boldMatch[1]; // "word"
+                     replaceWithFormat(selection, node, range.startOffset - boldMatch[0].length, range.startOffset, boldMatch[1], 'bold');
+                     return;
+                 }
 
-                     // We need to replace matchText with bolded innerText
-                     // We can select the range and execCommand 'bold'
-                     const start = range.startOffset - matchText.length;
-                     const end = range.startOffset;
+                 const strikeMatch = textBefore.match(/~~([^~]+)~~$/);
+                 if (strikeMatch) {
+                     e.preventDefault();
+                     replaceWithFormat(selection, node, range.startOffset - strikeMatch[0].length, range.startOffset, strikeMatch[1], 'strikeThrough');
+                     return;
+                 }
 
-                     const newRange = document.createRange();
-                     newRange.setStart(node, start);
-                     newRange.setEnd(node, end);
-                     selection.removeAllRanges();
-                     selection.addRange(newRange);
+                 const italicMatch = textBefore.match(/(?<!\*)\*([^*]+)\*$/);
+                 if (italicMatch) {
+                     e.preventDefault();
+                     replaceWithFormat(selection, node, range.startOffset - italicMatch[0].length, range.startOffset, italicMatch[1], 'italic');
+                     return;
+                 }
 
-                     // Replace with text
-                     document.execCommand('insertText', false, innerText);
-
-                     // Re-select to apply bold
-                     newRange.setStart(node, start);
-                     newRange.setEnd(node, start + innerText.length);
-                     selection.removeAllRanges();
-                     selection.addRange(newRange);
-                     document.execCommand('bold');
-
-                     // Move cursor to end and add space
-                     selection.collapseToEnd();
-                     // document.execCommand('insertText', false, '\u00A0'); // nbsp
+                 const italicMatchUnderscore = textBefore.match(/_([^_]+)_$/);
+                 if (italicMatchUnderscore) {
+                     e.preventDefault();
+                     replaceWithFormat(selection, node, range.startOffset - italicMatchUnderscore[0].length, range.startOffset, italicMatchUnderscore[1], 'italic');
                      return;
                  }
             }
         }
 
-        // LaTeX Handling on specific key (e.g. '$') or just on Space?
-        // User wants `$$...$$`.
-        // If they type the second `$`, we could check.
         if (e.key === '$') {
-             // Check if we are closing a block?
              const selection = window.getSelection();
              if (!selection.rangeCount) return;
              const range = selection.getRangeAt(0);
              const node = range.startContainer;
              if (node.nodeType === Node.TEXT_NODE) {
                  const textBefore = node.textContent.slice(0, range.startOffset);
-                 // Check for `$$...$` (since we are about to add the last $)
-                 // Also handle case where user pastes `$$...$$`? No, pasting is separate.
-                 // This handles typing the CLOSING `$` of `$$formula$$`.
-                 // Regex: look for `$$` followed by anything not `$` followed by `$` (last char before cursor).
-                 // Actually, textBefore includes the first `$` of the closing pair?
-                 // No, we haven't typed the last `$` yet. `textBefore` ends with `$`.
-                 // So we have `$$formula$`. We type `$`.
                  const match = textBefore.match(/\$\$([^\$]+)\$$/);
                  if (match) {
-                     e.preventDefault(); // Prevent inserting the last $ normally
+                     e.preventDefault();
                      const latex = match[1];
-
-                     // Render LaTeX
                      let rendered = '';
                      try {
                          rendered = katex.renderToString(latex, { throwOnError: false });
@@ -231,8 +307,7 @@ export default function TextBlock({ block, onUpdate, onAddNext }) {
                          rendered = `<span style="color:red">Error: ${err.message}</span>`;
                      }
 
-                     // Replace `$$...$` + (implied last $) with rendered HTML
-                     const matchLength = match[0].length; // "$$formula$"
+                     const matchLength = match[0].length;
                      const start = range.startOffset - matchLength;
 
                      const newRange = document.createRange();
@@ -241,9 +316,11 @@ export default function TextBlock({ block, onUpdate, onAddNext }) {
                      selection.removeAllRanges();
                      selection.addRange(newRange);
 
-                     // Insert HTML
+                     // Handle XSS: latex variable is raw input. Escape it for attribute.
+                     const safeLatex = escapeHtml(latex);
+
                      document.execCommand('insertHTML', false,
-                        `<span contenteditable="false" class="katex-render" data-latex="${latex}" title="Click to Edit (Not Implemented)">${rendered}</span>&nbsp;`
+                        `<span contenteditable="false" class="katex-render" data-latex="${safeLatex}" title="Click to Edit (Not Implemented)">${rendered}</span>&nbsp;`
                      );
 
                      return;
@@ -251,14 +328,6 @@ export default function TextBlock({ block, onUpdate, onAddNext }) {
              }
         }
     };
-
-    // Also handle pasting or loose text that might contain markdown/latex
-    // We can do this on Blur or on Input (debounced).
-    // For MVP, let's just make sure "Space" works robustly.
-    // The user issue "not rendering on the fly" might mean they expect pasting to work.
-    // Let's add a check on Input to detect `$$...$$` if the user finished typing it without us catching it?
-    // Or if they paste it.
-    // But `handleInput` is messy.
 
     return (
         <div
@@ -268,6 +337,7 @@ export default function TextBlock({ block, onUpdate, onAddNext }) {
             suppressContentEditableWarning
             onInput={handleInput}
             onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
             placeholder="Type '/' for commands"
         />
     );
