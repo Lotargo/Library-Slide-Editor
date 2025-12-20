@@ -110,6 +110,21 @@ const captureCanvasViaClone = async (originalNode) => {
     const width = clone.scrollWidth;
     const height = clone.scrollHeight;
 
+    // Ensure images are loaded in the clone
+    // Since we cloned deep, the src attributes are there.
+    // Browsers might re-request them or use cache.
+    // We should wait a moment for the DOM to settle and images to be "ready".
+    const images = clone.querySelectorAll('img');
+    const imagePromises = Array.from(images).map(img => {
+        if (img.complete) return Promise.resolve();
+        return new Promise(resolve => {
+            img.onload = resolve;
+            img.onerror = resolve; // Continue even if one fails
+        });
+    });
+
+    await Promise.all(imagePromises);
+
     try {
         const dataUrl = await toPng(clone, {
             quality: 1.0,
@@ -117,6 +132,7 @@ const captureCanvasViaClone = async (originalNode) => {
             backgroundColor: '#ffffff',
             width: width,
             height: height,
+            cacheBust: true, // Forces reload if needed, can help with stale/missing images
         });
         return { dataUrl, width, height };
     } finally {
