@@ -14,8 +14,14 @@ export default function SlideBlock({ block, onUpdate }) {
             <div className="rounded-lg border border-gray-200 overflow-hidden bg-gray-50 shadow-sm transition-shadow hover:shadow-md">
                 {/* Slide Header */}
                 <div className="px-3 py-2 bg-gray-100 border-b border-gray-200 flex justify-between items-center">
-                    <span className="text-xs font-semibold text-gray-500 uppercase tracking-wider">Slide</span>
-                    <div className="flex gap-2">
+                    <input
+                        type="text"
+                        value={block.title || ''}
+                        onChange={(e) => onUpdate({ title: e.target.value })}
+                        placeholder="Slide"
+                        className="text-xs font-semibold text-gray-600 uppercase tracking-wider bg-transparent border-none outline-none placeholder-gray-400 w-full mr-2"
+                    />
+                    <div className="flex gap-2 flex-shrink-0">
                         <select
                             value={block.ratio || '16/9'}
                             onChange={e => onUpdate({ ratio: e.target.value })}

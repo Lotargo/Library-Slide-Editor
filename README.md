@@ -1,4 +1,4 @@
-# Workspace & Slide Editor
+# Library & Slide Editor
 
 A powerful Notion-like workspace platform that combines infinite-canvas document editing with presentation slide capabilities.
 
@@ -8,18 +8,25 @@ A powerful Notion-like workspace platform that combines infinite-canvas document
 *   **Hybrid Editor**:
     *   **Document Mode**: Infinite vertical scroll for writing and planning.
     *   **Slide Mode**: Wrap any content into a "Slide" block with fixed aspect ratios (16:9, 4:3, 1:1) for easy export as images.
+    *   **Rename Slides**: Customize slide titles directly in the editor.
 *   **Rich Blocks**:
-    *   Text, Headings, Lists.
+    *   Text (with Markdown and LaTeX support), Headings, Lists.
+    *   **Code**: Syntax highlighting for various languages.
+    *   **Mermaid**: Create diagrams and flowcharts from code.
     *   **Tables**: Database-like tables.
     *   **Boards**: Kanban boards for task management.
     *   **Calendars**: Event planning.
     *   **Galleries**: Image grids.
+*   **Formatting Tools**:
+    *   **Floating Menu**: Bold, Italic, Underline, Alignment, Copy/Cut.
+    *   **Context Menu**: Paste, Move to Slide, Extract from Slide, Import File.
+    *   **Slash Commands**: Type `/` to insert blocks quickly.
 *   **Focus Mode**: Hideable toolbar for distraction-free writing.
 
 ## 🛠 Tech Stack
 
 *   **Backend**: Python, Django, MongoDB (pymongo).
-*   **Frontend**: React, Vite.
+*   **Frontend**: React, Vite, Tailwind CSS v4.
 
 ## 📦 Installation & Development
 
