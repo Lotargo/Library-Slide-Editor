@@ -1,12 +1,15 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Upload, Download, Image as ImageIcon } from 'lucide-react';
+import { Upload, Download, Image as ImageIcon, Maximize, Minimize } from 'lucide-react';
 import { api } from '../api';
 import { exportSlideToPng, exportCanvasToPng, exportToPdf } from '../utils/exportHelper';
 
-export default function ContextMenu() {
+export default function ContextMenu({ onMoveToSlide, onExtractFromSlide }) {
     const [position, setPosition] = useState(null);
     const [targetSlideId, setTargetSlideId] = useState(null);
+    const [targetBlockId, setTargetBlockId] = useState(null);
+    const [isInsideSlide, setIsInsideSlide] = useState(false);
+
     const menuRef = useRef(null);
     const fileInputRef = useRef(null);
 
@@ -16,11 +19,23 @@ export default function ContextMenu() {
              if (editor && editor.contains(e.target)) {
                  e.preventDefault();
 
-                 const slide = e.target.closest('[data-block-type="slide_wrapper"]');
-                 if (slide) {
-                     setTargetSlideId(slide.getAttribute('data-block-id'));
+                 // Detect clicked block
+                 const blockEl = e.target.closest('[data-block-id]');
+                 const blockId = blockEl ? blockEl.getAttribute('data-block-id') : null;
+
+                 // Detect if inside a slide
+                 const slideEl = e.target.closest('[data-block-type="slide_wrapper"]');
+                 const slideId = slideEl ? slideEl.getAttribute('data-block-id') : null;
+
+                 setTargetBlockId(blockId);
+                 setTargetSlideId(slideId);
+
+                 // If we are inside a slide, and the clicked block is NOT the slide wrapper itself
+                 // then we are targeting a child block inside a slide.
+                 if (slideId && blockId && slideId !== blockId) {
+                     setIsInsideSlide(true);
                  } else {
-                     setTargetSlideId(null);
+                     setIsInsideSlide(false);
                  }
 
                  setPosition({ x: e.clientX, y: e.clientY });
@@ -97,6 +112,20 @@ export default function ContextMenu() {
         fileInputRef.current?.click();
     };
 
+    const handleMoveToSlide = () => {
+        if (onMoveToSlide && targetBlockId) {
+            onMoveToSlide(targetBlockId);
+        }
+        setPosition(null);
+    };
+
+    const handleExtract = () => {
+        if (onExtractFromSlide && targetBlockId) {
+            onExtractFromSlide(targetBlockId);
+        }
+        setPosition(null);
+    };
+
     if (!position) return null;
 
     const exportLabel = targetSlideId ? 'Export Slide' : 'Export Canvas';
@@ -117,6 +146,30 @@ export default function ContextMenu() {
                 <Upload size={16} />
                 <span>Import File / Image</span>
             </button>
+
+            {/* Context Actions for Blocks */}
+            {targetBlockId && targetBlockId !== targetSlideId && (
+                <>
+                    <div className="border-t border-gray-100 my-1"></div>
+                     {isInsideSlide ? (
+                        <button
+                            onClick={handleExtract}
+                            className="w-full text-left px-3 py-1.5 hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700"
+                        >
+                            <Minimize size={16} />
+                            <span>Extract from Slide</span>
+                        </button>
+                     ) : (
+                        <button
+                            onClick={handleMoveToSlide}
+                            className="w-full text-left px-3 py-1.5 hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700"
+                        >
+                            <Maximize size={16} />
+                            <span>Move to Slide</span>
+                        </button>
+                     )}
+                </>
+            )}
 
             <div className="border-t border-gray-100 my-1"></div>
 

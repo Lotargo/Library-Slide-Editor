@@ -47,6 +47,22 @@ export default function PageEditor() {
         saveBlocks(newBlocks);
     };
 
+    // Helper: Find list and index containing a block ID
+    const findListContainingBlock = (blocks, id) => {
+        const idx = blocks.findIndex(b => b.id === id);
+        if (idx !== -1) return { list: blocks, index: idx, parent: null };
+        for (const b of blocks) {
+            if (b.children) {
+                const res = findListContainingBlock(b.children, id);
+                if (res) {
+                    // If we found it deep, mark the current block as parent (unless deeper recursion already set it)
+                    return { ...res, parent: res.parent || b };
+                }
+            }
+        }
+        return null;
+    };
+
     const handleConvertToSlide = () => {
         const selection = window.getSelection();
         if (!selection || selection.rangeCount === 0 || selection.isCollapsed) return;
@@ -66,20 +82,8 @@ export default function PageEditor() {
         // Deep clone to mutate
         const newBlocks = JSON.parse(JSON.stringify(page.blocks));
 
-        const findList = (blocks, id) => {
-            const idx = blocks.findIndex(b => b.id === id);
-            if (idx !== -1) return { list: blocks, index: idx };
-            for (const b of blocks) {
-                if (b.children) {
-                    const res = findList(b.children, id);
-                    if (res) return res;
-                }
-            }
-            return null;
-        };
-
-        const startRes = findList(newBlocks, startId);
-        const endRes = findList(newBlocks, endId);
+        const startRes = findListContainingBlock(newBlocks, startId);
+        const endRes = findListContainingBlock(newBlocks, endId);
 
         if (!startRes || !endRes || startRes.list !== endRes.list) {
             // Cannot group blocks from different lists
@@ -108,19 +112,7 @@ export default function PageEditor() {
     const handleUngroup = (slideId) => {
         const newBlocks = JSON.parse(JSON.stringify(page.blocks));
 
-        const findList = (blocks, id) => {
-            const idx = blocks.findIndex(b => b.id === id);
-            if (idx !== -1) return { list: blocks, index: idx };
-            for (const b of blocks) {
-                if (b.children) {
-                    const res = findList(b.children, id);
-                    if (res) return res;
-                }
-            }
-            return null;
-        };
-
-        const res = findList(newBlocks, slideId);
+        const res = findListContainingBlock(newBlocks, slideId);
         if (!res) return;
 
         const { list, index } = res;
@@ -133,6 +125,57 @@ export default function PageEditor() {
         updateBlocks(newBlocks);
         window.getSelection().removeAllRanges();
     };
+
+    // --- New Handlers for Context Menu ---
+
+    const handleMoveBlockToSlide = (blockId) => {
+        const newBlocks = JSON.parse(JSON.stringify(page.blocks));
+        const res = findListContainingBlock(newBlocks, blockId);
+        if (!res) return;
+
+        const { list, index } = res;
+        const block = list[index];
+
+        // Create new slide wrapping this block
+        const newSlide = {
+            id: uuidv4(),
+            type: 'slide_wrapper',
+            children: [block],
+            ratio: '16/9'
+        };
+
+        list.splice(index, 1, newSlide);
+        updateBlocks(newBlocks);
+    };
+
+    const handleExtractBlockFromSlide = (blockId) => {
+        const newBlocks = JSON.parse(JSON.stringify(page.blocks));
+        const res = findListContainingBlock(newBlocks, blockId);
+        if (!res || !res.parent) return; // Must have a parent (the slide)
+
+        const { list: slideChildren, index: blockIndex, parent: slideBlock } = res;
+
+        // Find where the slide itself is located
+        const slideRes = findListContainingBlock(newBlocks, slideBlock.id);
+        if (!slideRes) return;
+
+        const { list: parentList, index: slideIndex } = slideRes;
+
+        // 1. Remove block from slide
+        const block = slideChildren[blockIndex];
+        slideChildren.splice(blockIndex, 1);
+
+        // 2. Insert block into parent list (after the slide)
+        parentList.splice(slideIndex + 1, 0, block);
+
+        // 3. If slide is empty, remove it
+        if (slideChildren.length === 0) {
+            parentList.splice(slideIndex, 1);
+        }
+
+        updateBlocks(newBlocks);
+    };
+
 
     // DnD Helpers
     const findContainer = (id) => {
@@ -253,7 +296,10 @@ export default function PageEditor() {
         >
             <div className="flex flex-col h-full relative" id="editor-content-area">
                 <FloatingMenu onConvertToSlide={handleConvertToSlide} onUngroup={handleUngroup} />
-                <ContextMenu />
+                <ContextMenu
+                    onMoveToSlide={handleMoveBlockToSlide}
+                    onExtractFromSlide={handleExtractBlockFromSlide}
+                />
                 <Toolbar />
                 <div className="flex-1 overflow-y-auto">
                     <div id="page-content-root" className="max-w-4xl mx-auto px-12 py-16 pb-32 min-h-full bg-white">
