@@ -7,6 +7,7 @@ import { DndContext, closestCorners, PointerSensor, useSensor, useSensors } from
 import { arrayMove } from '@dnd-kit/sortable';
 import { v4 as uuidv4 } from 'uuid';
 import FloatingMenu from '../components/FloatingMenu';
+import ContextMenu from '../components/ContextMenu';
 
 export default function PageEditor() {
     const { pageId } = useParams();
@@ -102,6 +103,35 @@ export default function PageEditor() {
         updateBlocks(newBlocks);
 
         selection.removeAllRanges();
+    };
+
+    const handleUngroup = (slideId) => {
+        const newBlocks = JSON.parse(JSON.stringify(page.blocks));
+
+        const findList = (blocks, id) => {
+            const idx = blocks.findIndex(b => b.id === id);
+            if (idx !== -1) return { list: blocks, index: idx };
+            for (const b of blocks) {
+                if (b.children) {
+                    const res = findList(b.children, id);
+                    if (res) return res;
+                }
+            }
+            return null;
+        };
+
+        const res = findList(newBlocks, slideId);
+        if (!res) return;
+
+        const { list, index } = res;
+        const slideBlock = list[index];
+        const children = slideBlock.children || [];
+
+        // Remove slide, insert children
+        list.splice(index, 1, ...children);
+
+        updateBlocks(newBlocks);
+        window.getSelection().removeAllRanges();
     };
 
     // DnD Helpers
@@ -222,7 +252,8 @@ export default function PageEditor() {
             onDragEnd={handleDragEnd}
         >
             <div className="flex flex-col h-full relative" id="editor-content-area">
-                <FloatingMenu onConvertToSlide={handleConvertToSlide} />
+                <FloatingMenu onConvertToSlide={handleConvertToSlide} onUngroup={handleUngroup} />
+                <ContextMenu />
                 <Toolbar />
                 <div className="flex-1 overflow-y-auto">
                     <div className="max-w-4xl mx-auto px-12 py-16 pb-32 min-h-full bg-white">
