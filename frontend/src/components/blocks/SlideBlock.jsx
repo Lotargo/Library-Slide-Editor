@@ -32,6 +32,7 @@ export default function SlideBlock({ block, onUpdate }) {
                 {/* Canvas Container */}
                 <div className="p-6 bg-gray-200/50 flex justify-center items-center overflow-hidden">
                      <div
+                        id={`slide-content-${block.id}`}
                         className="bg-white shadow-lg w-full max-w-3xl flex flex-col relative transition-all duration-300"
                         style={{ aspectRatio: ratioStyle }}
                      >

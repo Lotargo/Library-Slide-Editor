@@ -1,10 +1,12 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Upload, Download } from 'lucide-react';
+import { Upload, Download, Image as ImageIcon } from 'lucide-react';
 import { api } from '../api';
+import { exportToPng, exportToPdf } from '../utils/exportHelper';
 
 export default function ContextMenu() {
     const [position, setPosition] = useState(null);
+    const [targetSlideId, setTargetSlideId] = useState(null);
     const menuRef = useRef(null);
     const fileInputRef = useRef(null);
 
@@ -13,6 +15,14 @@ export default function ContextMenu() {
              const editor = document.getElementById('editor-content-area');
              if (editor && editor.contains(e.target)) {
                  e.preventDefault();
+
+                 const slide = e.target.closest('[data-block-type="slide_wrapper"]');
+                 if (slide) {
+                     setTargetSlideId(slide.getAttribute('data-block-id'));
+                 } else {
+                     setTargetSlideId(null);
+                 }
+
                  setPosition({ x: e.clientX, y: e.clientY });
              } else {
                  setPosition(null);
@@ -66,11 +76,21 @@ export default function ContextMenu() {
         }
     };
 
+    const handleExport = (format) => {
+        const id = targetSlideId ? `slide-content-${targetSlideId}` : 'page-content-root';
+        const name = targetSlideId ? 'slide' : 'page';
+        if (format === 'png') exportToPng(id, name);
+        if (format === 'pdf') exportToPdf(id, name);
+        setPosition(null);
+    };
+
     const triggerUpload = () => {
         fileInputRef.current?.click();
     };
 
     if (!position) return null;
+
+    const exportLabel = targetSlideId ? 'Export Slide' : 'Export Page';
 
     return createPortal(
         <div
@@ -88,10 +108,25 @@ export default function ContextMenu() {
                 <Upload size={16} />
                 <span>Import File / Image</span>
             </button>
+
             <div className="border-t border-gray-100 my-1"></div>
-            <button className="w-full text-left px-3 py-1.5 hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700 opacity-50 cursor-not-allowed">
+
+            <div className="px-3 py-1 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-0.5">
+                {exportLabel}
+            </div>
+            <button
+                onClick={() => handleExport('png')}
+                className="w-full text-left px-3 py-1.5 hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700"
+            >
+                <ImageIcon size={16} />
+                <span>PNG (High Quality)</span>
+            </button>
+            <button
+                onClick={() => handleExport('pdf')}
+                className="w-full text-left px-3 py-1.5 hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700"
+            >
                 <Download size={16} />
-                <span>Export (Coming Soon)</span>
+                <span>PDF</span>
             </button>
 
             <input

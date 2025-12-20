@@ -256,7 +256,7 @@ export default function PageEditor() {
                 <ContextMenu />
                 <Toolbar />
                 <div className="flex-1 overflow-y-auto">
-                    <div className="max-w-4xl mx-auto px-12 py-16 pb-32 min-h-full bg-white">
+                    <div id="page-content-root" className="max-w-4xl mx-auto px-12 py-16 pb-32 min-h-full bg-white">
                          <div
                             className="text-4xl font-bold mb-8 outline-none text-gray-900 empty:before:content-[attr(placeholder)] empty:before:text-gray-300 cursor-text"
                             contentEditable
