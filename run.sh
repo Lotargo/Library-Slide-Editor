@@ -9,6 +9,17 @@ if ! command -v python3 &> /dev/null; then
     exit 1
 fi
 
+# Build Frontend
+echo "Building Frontend..."
+if command -v npm &> /dev/null; then
+    cd frontend
+    npm install
+    npm run build
+    cd ..
+else
+    echo "Warning: npm not found. Skipping frontend build."
+fi
+
 # Install Dependencies
 echo "Installing dependencies..."
 if [ -f "poetry.lock" ] && command -v poetry &> /dev/null; then

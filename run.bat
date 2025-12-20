@@ -9,6 +9,18 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
+REM Build Frontend
+echo Building Frontend...
+call npm --version >nul 2>&1
+if %errorlevel% equ 0 (
+    cd frontend
+    call npm install
+    call npm run build
+    cd ..
+) else (
+    echo Warning: npm not found. Skipping frontend build.
+)
+
 REM Install Dependencies
 echo Installing dependencies...
 if exist poetry.lock (
