@@ -54,5 +54,16 @@ export const api = {
     getFonts: async () => {
         const res = await fetch(`${API_BASE}/fonts`);
         return res.json();
+    },
+
+    // Files
+    uploadFile: async (file) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch(`${API_BASE}/upload`, {
+            method: 'POST',
+            body: formData
+        });
+        return res.json();
     }
 };

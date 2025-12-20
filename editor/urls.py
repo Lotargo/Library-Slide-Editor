@@ -14,4 +14,7 @@ urlpatterns = [
 
     # Fonts API
     path('api/fonts', views.api_fonts, name='api_fonts'),
+
+    # File Upload API
+    path('api/upload', views.api_upload_file, name='api_upload_file'),
 ]

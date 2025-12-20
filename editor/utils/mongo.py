@@ -32,7 +32,7 @@ def serialize_doc(doc):
 
 # Workspace Helpers
 def get_all_workspaces():
-    cursor = get_workspaces_collection().find({}).sort("created_at", -1)
+    cursor = get_workspaces_collection().find({"deleted_at": {"$exists": False}}).sort("created_at", -1)
     return [serialize_doc(doc) for doc in cursor]
 
 def create_workspace(name):
@@ -47,11 +47,11 @@ def create_workspace(name):
 
 def get_workspace(workspace_id):
     try:
-        doc = get_workspaces_collection().find_one({"_id": ObjectId(workspace_id)})
+        doc = get_workspaces_collection().find_one({"_id": ObjectId(workspace_id), "deleted_at": {"$exists": False}})
         if not doc:
             return None
         # Get pages for this workspace
-        pages_cursor = get_pages_collection().find({"workspace_id": str(workspace_id)}, {"title": 1, "updated_at": 1})
+        pages_cursor = get_pages_collection().find({"workspace_id": str(workspace_id), "deleted_at": {"$exists": False}}, {"title": 1, "updated_at": 1})
         pages = [serialize_doc(p) for p in pages_cursor]
         doc = serialize_doc(doc)
         doc['pages'] = pages
@@ -72,10 +72,13 @@ def update_workspace(workspace_id, data):
 
 def delete_workspace(workspace_id):
     try:
-        # Delete workspace
-        get_workspaces_collection().delete_one({"_id": ObjectId(workspace_id)})
-        # Delete pages
-        get_pages_collection().delete_many({"workspace_id": str(workspace_id)})
+        # Soft delete workspace
+        get_workspaces_collection().update_one(
+            {"_id": ObjectId(workspace_id)},
+            {"$set": {"deleted_at": datetime.datetime.utcnow()}}
+        )
+        # We do not soft-delete pages here to allow easier restoration.
+        # Logic relying on get_workspace will filter them out anyway.
         return True
     except:
         return False
@@ -95,7 +98,7 @@ def create_page(workspace_id, title="Untitled"):
 
 def get_page(page_id):
     try:
-        doc = get_pages_collection().find_one({"_id": ObjectId(page_id)})
+        doc = get_pages_collection().find_one({"_id": ObjectId(page_id), "deleted_at": {"$exists": False}})
         return serialize_doc(doc)
     except:
         return None
@@ -115,7 +118,10 @@ def update_page(page_id, data):
 
 def delete_page(page_id):
     try:
-        get_pages_collection().delete_one({"_id": ObjectId(page_id)})
+        get_pages_collection().update_one(
+            {"_id": ObjectId(page_id)},
+            {"$set": {"deleted_at": datetime.datetime.utcnow()}}
+        )
         return True
     except:
         return False
