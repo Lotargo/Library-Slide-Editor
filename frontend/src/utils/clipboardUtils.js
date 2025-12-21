@@ -10,6 +10,7 @@ const APP_SIGNATURE = "dj-cards-blocks-v1";
  */
 export const regenerateIds = (block) => {
     // Deep clone first to break all references
+    // Using structuredClone handles nested arrays/objects properly
     const clonedBlock = structuredClone(block);
 
     const processBlock = (blk) => {
