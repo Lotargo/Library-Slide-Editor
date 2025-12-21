@@ -2,6 +2,7 @@ import React, { useRef, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import katex from 'katex';
 import { FileText, Table, Layout, Calendar, Share2, Code, Minus, Quote, CheckSquare, Check } from 'lucide-react';
+import { api } from '../../api';
 
 export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
     const ref = useRef(null);
@@ -278,8 +279,44 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
         document.execCommand('insertText', false, '\u00A0');
     };
 
-    const handlePaste = (e) => {
+    const handlePaste = async (e) => {
         e.preventDefault();
+
+        // Check for images in clipboard
+        if (e.clipboardData.files && e.clipboardData.files.length > 0) {
+            const files = Array.from(e.clipboardData.files).filter(f => f.type.startsWith('image/'));
+            if (files.length > 0) {
+                // Insert placeholder
+                const placeholderId = `loading-${Date.now()}`;
+                const placeholderHtml = `<span id="${placeholderId}" class="inline-flex items-center gap-1 bg-gray-100 text-gray-500 rounded px-2 py-0.5 text-xs animate-pulse">Uploading image...</span>`;
+                document.execCommand('insertHTML', false, placeholderHtml);
+
+                for (const file of files) {
+                    try {
+                        const data = await api.uploadFile(file);
+                        const imgHtml = `<img src="${data.url}" alt="${file.name}" style="max-width: 100%; height: auto; display: block; margin: 0.5rem 0;" />`;
+
+                        // Replace placeholder (we only support 1 placeholder for now for simplicity, or we should have tracked range)
+                        // A better way is to select the placeholder by ID and replace it.
+                        const placeholderEl = document.getElementById(placeholderId);
+                        if (placeholderEl) {
+                            placeholderEl.outerHTML = imgHtml;
+                            // Trigger update
+                            onUpdate({ content: ref.current.innerHTML });
+                        }
+                    } catch (err) {
+                        console.error("Paste upload failed", err);
+                         const placeholderEl = document.getElementById(placeholderId);
+                         if (placeholderEl) {
+                             placeholderEl.innerText = "Upload failed";
+                             placeholderEl.classList.add("text-red-500");
+                         }
+                    }
+                }
+                return;
+            }
+        }
+
         const text = e.clipboardData.getData('text/plain');
 
         const unescapeForKatex = (str) => {
