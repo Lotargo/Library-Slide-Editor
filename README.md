@@ -11,15 +11,16 @@ A powerful Notion-like workspace platform that combines infinite-canvas document
     *   **Rename Slides**: Customize slide titles directly in the editor.
 *   **Rich Blocks**:
     *   Text (with Markdown and LaTeX support), Headings, Lists.
-    *   **Code**: Syntax highlighting for various languages.
+    *   **Code**: Syntax highlighting with line wrapping.
     *   **Mermaid**: Create diagrams and flowcharts from code.
     *   **Tables**: Database-like tables.
     *   **Boards**: Kanban boards for task management.
     *   **Calendars**: Event planning.
     *   **Galleries**: Image grids.
 *   **Formatting Tools**:
+    *   **Inline Code**: Wrap text in backticks (\`) or select text and press \` for Telegram-style inline code. Click to copy!
     *   **Floating Menu**: Bold, Italic, Underline, Alignment, Copy/Cut.
-    *   **Context Menu**: Paste, Move to Slide, Extract from Slide, Import File.
+    *   **Context Menu**: Paste, Delete Block, Move to Slide, Extract from Slide, Import File.
     *   **Slash Commands**: Type `/` to insert blocks quickly.
 *   **Focus Mode**: Hideable toolbar for distraction-free writing.
 
