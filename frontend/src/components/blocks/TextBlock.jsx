@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom';
 import katex from 'katex';
 import { FileText, Table, Layout, Calendar, Share2, Code, Minus, Quote, CheckSquare, Check } from 'lucide-react';
 import { api } from '../../api';
+import { parseBlockData } from '../../utils/clipboardUtils';
 
 export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
     const ref = useRef(null);
@@ -282,7 +283,19 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
     const handlePaste = async (e) => {
         e.preventDefault();
 
-        // Check for images in clipboard
+        // 1. Check for Block Data
+        const clipboardText = e.clipboardData.getData('text/plain');
+        const blockData = parseBlockData(clipboardText);
+
+        if (blockData) {
+            // Dispatch event for BlockList to handle
+            window.dispatchEvent(new CustomEvent('editor:insert-blocks-data', {
+                detail: { blocks: blockData, afterId: block.id }
+            }));
+            return;
+        }
+
+        // 2. Check for images in clipboard
         if (e.clipboardData.files && e.clipboardData.files.length > 0) {
             const files = Array.from(e.clipboardData.files).filter(f => f.type.startsWith('image/'));
             if (files.length > 0) {
@@ -296,12 +309,9 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
                         const data = await api.uploadFile(file);
                         const imgHtml = `<img src="${data.url}" alt="${file.name}" style="max-width: 100%; height: auto; display: block; margin: 0.5rem 0;" />`;
 
-                        // Replace placeholder (we only support 1 placeholder for now for simplicity, or we should have tracked range)
-                        // A better way is to select the placeholder by ID and replace it.
                         const placeholderEl = document.getElementById(placeholderId);
                         if (placeholderEl) {
                             placeholderEl.outerHTML = imgHtml;
-                            // Trigger update
                             onUpdate({ content: ref.current.innerHTML });
                         }
                     } catch (err) {
@@ -317,8 +327,45 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
             }
         }
 
-        const text = e.clipboardData.getData('text/plain');
+        // 3. Handle HTML (Rich Paste)
+        const html = e.clipboardData.getData('text/html');
+        if (html) {
+            // Simple sanitizer that keeps formatting we care about
+            // We strip most block tags but keep inline styles for code
+            // Actually, execCommand('insertHTML') does a decent job, but we might want to manually process
+            // to ensure <code> styles are preserved.
 
+            // For now, let's try to insert the HTML directly but cleaned up?
+            // Or stick to the regex replacement strategy if HTML is complex?
+
+            // Let's iterate over nodes or regex replace?
+            // The previous regex replacement was for text/plain.
+
+            // If we have HTML, we trust it slightly more for formatting?
+            // But we want to enforce OUR styles.
+
+            // Let's use a temp div to parse
+            const temp = document.createElement('div');
+            temp.innerHTML = html;
+
+            // Walk through and fix <code> tags
+            const codeTags = temp.querySelectorAll('code');
+            codeTags.forEach(code => {
+                // Apply our style
+                code.style.cssText = "color: #2563eb; background-color: rgba(0,0,0,0.05); border-radius: 3px; padding: 0 2px; font-family: monospace; cursor: pointer;";
+            });
+
+            // Get the processed HTML
+            // We should ideally strip block tags (div, p) to avoid nesting blocks inside text block
+            // but insertHTML usually handles that or we rely on contentEditable behavior.
+            // A safe bet is to unwrap block tags.
+
+            const processedHtml = temp.innerHTML;
+            document.execCommand('insertHTML', false, processedHtml);
+            return;
+        }
+
+        // 4. Fallback to Text Plain (old logic)
         const unescapeForKatex = (str) => {
             return str
                 .replace(/&lt;/g, "<")
@@ -328,7 +375,7 @@ export default function TextBlock({ block, onUpdate, onAddNext, autoFocus }) {
                 .replace(/&#039;/g, "'");
         };
 
-        let processed = escapeHtml(text)
+        let processed = escapeHtml(clipboardText)
             .replace(/\$\$([^\$]+)\$\$/g, (match, latex) => {
                 const rawLatex = unescapeForKatex(latex);
                 try {

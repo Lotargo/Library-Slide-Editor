@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Upload, Download, Image as ImageIcon, Maximize, Minimize, ClipboardPaste, Trash2, Save, Scissors, Copy } from 'lucide-react';
+import { Upload, Download, Image as ImageIcon, Maximize, Minimize, ClipboardPaste, Trash2, Save, Scissors, Copy, Copy as CopyBlock } from 'lucide-react';
 import { api } from '../api';
 import { exportSlideToPng, exportCanvasToPng, exportToPdf } from '../utils/exportHelper';
 
@@ -54,18 +54,8 @@ export default function ContextMenu({ onMoveToSlide, onExtractFromSlide }) {
                  }
 
                  // 2. Check for Text Selection (Copy/Cut)
-                 // Note: We also allow Copy/Cut if it's an image? Usually Copy Image is specific.
-                 // The user requirement: "Copy, Cut... only if click was on empty or text field then Save As is NOT shown".
-                 // Meaning Save As is mutually exclusive with "normal text context" usually,
-                 // BUT standard text context has Copy/Cut.
-                 // If we click on text, we want Copy/Cut.
-                 // If we click on Image, we want Save As (and maybe Copy).
-
                  const selection = window.getSelection();
                  const hasSelection = selection && selection.toString().length > 0;
-                 // Also allow if it's an editable field even without selection?
-                 // Usually Cut/Copy require selection. Paste doesn't.
-                 // We'll stick to selection for Copy/Cut enabled state.
                  setCanCopyCut(hasSelection);
 
                  setPosition({ x: e.clientX, y: e.clientY });
@@ -217,6 +207,24 @@ export default function ContextMenu({ onMoveToSlide, onExtractFromSlide }) {
         setPosition(null);
     };
 
+    const handleCopyBlock = () => {
+        if (targetBlockId) {
+            window.dispatchEvent(new CustomEvent('editor:copy-block', {
+                detail: { id: targetBlockId }
+            }));
+        }
+        setPosition(null);
+    };
+
+    const handleCutBlock = () => {
+        if (targetBlockId) {
+            window.dispatchEvent(new CustomEvent('editor:cut-block', {
+                detail: { id: targetBlockId }
+            }));
+        }
+        setPosition(null);
+    };
+
     if (!position) return null;
 
     const exportLabel = targetSlideId ? 'Export Slide' : 'Export Canvas';
@@ -239,14 +247,14 @@ export default function ContextMenu({ onMoveToSlide, onExtractFromSlide }) {
                         className="w-full text-left px-3 py-1.5 hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700"
                     >
                         <Copy size={16} />
-                        <span>Copy</span>
+                        <span>Copy Text</span>
                     </button>
                     <button
                         onClick={handleCut}
                         className="w-full text-left px-3 py-1.5 hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700"
                     >
                         <Scissors size={16} />
-                        <span>Cut</span>
+                        <span>Cut Text</span>
                     </button>
                 </>
             )}
@@ -289,9 +297,26 @@ export default function ContextMenu({ onMoveToSlide, onExtractFromSlide }) {
             </button>
 
             {/* Context Actions for Blocks */}
-            {targetBlockId && targetBlockId !== targetSlideId && (
+            {targetBlockId && (
                 <>
                     <div className="border-t border-gray-100 my-1"></div>
+
+                    {/* Copy Block Buttons */}
+                    <button
+                        onClick={handleCopyBlock}
+                        className="w-full text-left px-3 py-1.5 hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700"
+                    >
+                        <CopyBlock size={16} />
+                        <span>Copy Block</span>
+                    </button>
+                    <button
+                        onClick={handleCutBlock}
+                        className="w-full text-left px-3 py-1.5 hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700"
+                    >
+                        <Scissors size={16} />
+                        <span>Cut Block</span>
+                    </button>
+
                      {isInsideSlide ? (
                         <button
                             onClick={handleExtract}
@@ -301,13 +326,15 @@ export default function ContextMenu({ onMoveToSlide, onExtractFromSlide }) {
                             <span>Extract from Slide</span>
                         </button>
                      ) : (
-                        <button
-                            onClick={handleMoveToSlide}
-                            className="w-full text-left px-3 py-1.5 hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700"
-                        >
-                            <Maximize size={16} />
-                            <span>Move to Slide</span>
-                        </button>
+                         targetBlockId !== targetSlideId && (
+                            <button
+                                onClick={handleMoveToSlide}
+                                className="w-full text-left px-3 py-1.5 hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700"
+                            >
+                                <Maximize size={16} />
+                                <span>Move to Slide</span>
+                            </button>
+                         )
                      )}
                      <button
                         onClick={handleDelete}

@@ -4,6 +4,7 @@ import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { Loader2 } from 'lucide-react';
 import BlockWrapper from './BlockWrapper';
 import { api } from '../api';
+import { serializeBlocks, parseBlockData } from '../utils/clipboardUtils';
 
 export default function BlockList({ blocks, onChange, listId = 'root' }) {
     const listRef = useRef(null);
@@ -43,7 +44,7 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
         onChange(newBlocks);
     };
 
-    // Listen for custom insert events (e.g. from ContextMenu)
+    // Listen for custom events (e.g. from ContextMenu, Paste)
     React.useEffect(() => {
         const handleInsert = (e) => {
             const { afterId, type, content } = e.detail;
@@ -58,17 +59,67 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
         const handleDelete = (e) => {
             const { id } = e.detail;
             if (!id) return;
-            // Check if block belongs to this list
             if (blocks.some(b => b.id === id)) {
                 deleteBlock(id);
             }
         };
 
+        const handleCopyBlock = (e) => {
+            const { id } = e.detail;
+            const block = blocks.find(b => b.id === id);
+            if (block) {
+                const serialized = serializeBlocks(block);
+                // We use a temporary textarea to put data into clipboard if navigator.clipboard is blocked?
+                // But navigator.clipboard is better.
+                // We want to set text/plain AND custom format?
+                // For now, let's put it in text/plain as JSON string.
+                navigator.clipboard.writeText(serialized).then(() => {
+                    console.log("Block copied to clipboard");
+                }).catch(err => console.error("Copy failed", err));
+            }
+        };
+
+        const handleCutBlock = (e) => {
+             const { id } = e.detail;
+             const block = blocks.find(b => b.id === id);
+             if (block) {
+                 const serialized = serializeBlocks(block);
+                 navigator.clipboard.writeText(serialized).then(() => {
+                     deleteBlock(id);
+                 }).catch(err => console.error("Cut failed", err));
+             }
+        };
+
+        const handleInsertBlocksData = (e) => {
+            // This event is dispatched when TextBlock detects block data in clipboard
+            const { blocks: newBlocksData, afterId } = e.detail;
+            if (newBlocksData && newBlocksData.length > 0) {
+                 const index = afterId ? blocks.findIndex(b => b.id === afterId) : blocks.length - 1;
+                 const currentBlocks = [...blocks];
+
+                 // Insert after
+                 currentBlocks.splice(index + 1, 0, ...newBlocksData);
+                 onChange(currentBlocks);
+
+                 // Focus the first inserted block
+                 if (newBlocksData[0]) {
+                     setFocusId(newBlocksData[0].id);
+                 }
+            }
+        };
+
         window.addEventListener('editor:insert-block', handleInsert);
         window.addEventListener('editor:delete-block', handleDelete);
+        window.addEventListener('editor:copy-block', handleCopyBlock);
+        window.addEventListener('editor:cut-block', handleCutBlock);
+        window.addEventListener('editor:insert-blocks-data', handleInsertBlocksData);
+
         return () => {
             window.removeEventListener('editor:insert-block', handleInsert);
             window.removeEventListener('editor:delete-block', handleDelete);
+            window.removeEventListener('editor:copy-block', handleCopyBlock);
+            window.removeEventListener('editor:cut-block', handleCutBlock);
+            window.removeEventListener('editor:insert-blocks-data', handleInsertBlocksData);
         };
     }, [blocks, onChange]);
 
