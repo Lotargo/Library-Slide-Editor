@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Upload, Download, Image as ImageIcon, Maximize, Minimize, ClipboardPaste, Trash2 } from 'lucide-react';
+import { Upload, Download, Image as ImageIcon, Maximize, Minimize, ClipboardPaste, Trash2, Save, Scissors, Copy } from 'lucide-react';
 import { api } from '../api';
 import { exportSlideToPng, exportCanvasToPng, exportToPdf } from '../utils/exportHelper';
 
@@ -9,6 +9,11 @@ export default function ContextMenu({ onMoveToSlide, onExtractFromSlide }) {
     const [targetSlideId, setTargetSlideId] = useState(null);
     const [targetBlockId, setTargetBlockId] = useState(null);
     const [isInsideSlide, setIsInsideSlide] = useState(false);
+
+    // New state for extended actions
+    const [canSaveAs, setCanSaveAs] = useState(false);
+    const [imageSrc, setImageSrc] = useState(null);
+    const [canCopyCut, setCanCopyCut] = useState(false);
 
     const menuRef = useRef(null);
     const fileInputRef = useRef(null);
@@ -30,13 +35,38 @@ export default function ContextMenu({ onMoveToSlide, onExtractFromSlide }) {
                  setTargetBlockId(blockId);
                  setTargetSlideId(slideId);
 
-                 // If we are inside a slide, and the clicked block is NOT the slide wrapper itself
-                 // then we are targeting a child block inside a slide.
+                 // Inside slide check
                  if (slideId && blockId && slideId !== blockId) {
                      setIsInsideSlide(true);
                  } else {
                      setIsInsideSlide(false);
                  }
+
+                 // --- Detection for extended actions ---
+
+                 // 1. Check for Image (Save As)
+                 if (e.target.tagName === 'IMG') {
+                     setCanSaveAs(true);
+                     setImageSrc(e.target.src);
+                 } else {
+                     setCanSaveAs(false);
+                     setImageSrc(null);
+                 }
+
+                 // 2. Check for Text Selection (Copy/Cut)
+                 // Note: We also allow Copy/Cut if it's an image? Usually Copy Image is specific.
+                 // The user requirement: "Copy, Cut... only if click was on empty or text field then Save As is NOT shown".
+                 // Meaning Save As is mutually exclusive with "normal text context" usually,
+                 // BUT standard text context has Copy/Cut.
+                 // If we click on text, we want Copy/Cut.
+                 // If we click on Image, we want Save As (and maybe Copy).
+
+                 const selection = window.getSelection();
+                 const hasSelection = selection && selection.toString().length > 0;
+                 // Also allow if it's an editable field even without selection?
+                 // Usually Cut/Copy require selection. Paste doesn't.
+                 // We'll stick to selection for Copy/Cut enabled state.
+                 setCanCopyCut(hasSelection);
 
                  setPosition({ x: e.clientX, y: e.clientY });
              } else {
@@ -99,7 +129,6 @@ export default function ContextMenu({ onMoveToSlide, onExtractFromSlide }) {
                 exportCanvasToPng('page-content-root', 'canvas');
             }
         } else if (format === 'pdf') {
-            // PDF logic remains shared for now, but respecting the type
             const id = targetSlideId ? `slide-content-${targetSlideId}` : 'page-content-root';
             const name = targetSlideId ? 'slide' : 'canvas';
             const type = targetSlideId ? 'slide' : 'canvas';
@@ -123,6 +152,39 @@ export default function ContextMenu({ onMoveToSlide, onExtractFromSlide }) {
             console.error("Paste failed:", err);
             alert("Failed to read clipboard. Please ensure you have granted permission.");
         }
+    };
+
+    const handleCopy = () => {
+        document.execCommand('copy');
+        setPosition(null);
+    };
+
+    const handleCut = () => {
+        document.execCommand('cut');
+        setPosition(null);
+    };
+
+    const handleSaveAs = async () => {
+        if (!imageSrc) return;
+        try {
+            const response = await fetch(imageSrc);
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            // Guess filename
+            const name = imageSrc.split('/').pop() || 'download.png';
+            a.download = name;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+        } catch (err) {
+            console.error("Save As failed:", err);
+            alert("Failed to download image.");
+        }
+        setPosition(null);
     };
 
     const handleMoveToSlide = () => {
@@ -168,6 +230,27 @@ export default function ContextMenu({ onMoveToSlide, onExtractFromSlide }) {
             <div className="px-3 py-1.5 text-xs font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-100 mb-1">
                 Actions
             </div>
+
+            {/* Copy / Cut - Only if selection exists */}
+            {canCopyCut && (
+                <>
+                    <button
+                        onClick={handleCopy}
+                        className="w-full text-left px-3 py-1.5 hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700"
+                    >
+                        <Copy size={16} />
+                        <span>Copy</span>
+                    </button>
+                    <button
+                        onClick={handleCut}
+                        className="w-full text-left px-3 py-1.5 hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700"
+                    >
+                        <Scissors size={16} />
+                        <span>Cut</span>
+                    </button>
+                </>
+            )}
+
             <button
                 onClick={handlePaste}
                 className="w-full text-left px-3 py-1.5 hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700"
@@ -175,6 +258,19 @@ export default function ContextMenu({ onMoveToSlide, onExtractFromSlide }) {
                 <ClipboardPaste size={16} />
                 <span>Paste</span>
             </button>
+
+            {/* Save As - Only for images */}
+            {canSaveAs && (
+                <button
+                    onClick={handleSaveAs}
+                    className="w-full text-left px-3 py-1.5 hover:bg-gray-100 flex items-center gap-2 text-sm text-gray-700 border-t border-gray-100 mt-1 pt-1.5"
+                >
+                    <Save size={16} />
+                    <span>Save Image As...</span>
+                </button>
+            )}
+
+            <div className="border-t border-gray-100 my-1"></div>
 
             <button
                 onClick={triggerUpload}
