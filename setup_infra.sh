@@ -27,19 +27,19 @@ echo "Starting MongoDB..."
 $SUDO docker pull mongo:latest
 
 # Check if container exists
-if $SUDO docker container inspect mongodb &> /dev/null; then
-    echo "Container 'mongodb' exists. Checking status..."
-    IS_RUNNING=$($SUDO docker container inspect -f '{{.State.Running}}' mongodb)
+if $SUDO docker container inspect dj_cards_mongo &> /dev/null; then
+    echo "Container 'dj_cards_mongo' exists. Checking status..."
+    IS_RUNNING=$($SUDO docker container inspect -f '{{.State.Running}}' dj_cards_mongo)
 
     if [ "$IS_RUNNING" == "true" ]; then
         echo "MongoDB is already running."
     else
         echo "MongoDB is stopped. Starting it..."
-        $SUDO docker start mongodb
+        $SUDO docker start dj_cards_mongo
     fi
 else
-    echo "Container 'mongodb' does not exist. Creating new one..."
-    $SUDO docker run -d --name mongodb -p 27017:27017 mongo:latest
+    echo "Container 'dj_cards_mongo' does not exist. Creating new one..."
+    $SUDO docker run -d --name dj_cards_mongo -p 27017:27017 mongo:latest
 fi
 
 echo "Waiting for MongoDB to accept connections..."
