@@ -34,28 +34,28 @@ if %errorlevel% neq 0 (
 )
 
 REM Check if container exists
-docker container inspect mongodb >nul 2>&1
+docker container inspect dj_cards_mongo >nul 2>&1
 if %errorlevel% equ 0 (
-    echo Container 'mongodb' exists. Checking status...
+    echo Container 'dj_cards_mongo' exists. Checking status...
 
     REM Check if running
-    for /f "tokens=*" %%i in ('docker container inspect -f "{{.State.Running}}" mongodb') do set IS_RUNNING=%%i
+    for /f "tokens=*" %%i in ('docker container inspect -f "{{.State.Running}}" dj_cards_mongo') do set IS_RUNNING=%%i
 
     if "%IS_RUNNING%"=="true" (
         echo MongoDB is already running.
     ) else (
         echo MongoDB is stopped. Starting it...
-        docker start mongodb
+        docker start dj_cards_mongo
         if %errorlevel% neq 0 (
-            echo Error: Failed to start existing mongodb container.
-            echo Try removing it manually: docker rm mongodb
+            echo Error: Failed to start existing dj_cards_mongo container.
+            echo Try removing it manually: docker rm dj_cards_mongo
             pause
             exit /b 1
         )
     )
 ) else (
-    echo Container 'mongodb' does not exist. Creating new one...
-    docker run -d --name mongodb -p 27017:27017 mongo:latest
+    echo Container 'dj_cards_mongo' does not exist. Creating new one...
+    docker run -d --name dj_cards_mongo -p 27017:27017 mongo:latest
     if %errorlevel% neq 0 (
         echo Error: Failed to run mongodb container.
         echo Check if port 27017 is already in use by another application.
