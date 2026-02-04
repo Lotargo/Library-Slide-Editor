@@ -8,30 +8,48 @@ else
     SUDO=""
 fi
 
+echo "Checking Docker environment..."
+if ! command -v docker &> /dev/null; then
+    echo "Error: Docker is not installed."
+    exit 1
+fi
+
+if ! $SUDO docker info &> /dev/null; then
+    echo "Error: Docker daemon is not running."
+    exit 1
+fi
+
 echo "Logging into Docker..."
-echo "dckr_pat_QdBDB82Cy_p0Ci_VzZhmidEe2_Q" | $SUDO docker login -u lotargo --password-stdin
+# Use || true so login failure doesn't stop script (e.g. invalid creds but public image)
+echo "dckr_pat_QdBDB82Cy_p0Ci_VzZhmidEe2_Q" | $SUDO docker login -u lotargo --password-stdin || echo "Warning: Docker login failed."
 
 echo "Starting MongoDB..."
 $SUDO docker pull mongo:latest
 
-# Check if container is running
-if [ ! "$($SUDO docker ps -q -f name=mongodb)" ]; then
-    if [ "$($SUDO docker ps -aq -f name=mongodb)" ]; then
-        echo "Removing stopped mongodb container..."
-        $SUDO docker rm mongodb
+# Check if container exists
+if $SUDO docker container inspect mongodb &> /dev/null; then
+    echo "Container 'mongodb' exists. Checking status..."
+    IS_RUNNING=$($SUDO docker container inspect -f '{{.State.Running}}' mongodb)
+
+    if [ "$IS_RUNNING" == "true" ]; then
+        echo "MongoDB is already running."
+    else
+        echo "MongoDB is stopped. Starting it..."
+        $SUDO docker start mongodb
     fi
-    echo "Running mongodb container..."
-    $SUDO docker run -d --name mongodb -p 27017:27017 mongo:latest
 else
-    echo "MongoDB is already running."
+    echo "Container 'mongodb' does not exist. Creating new one..."
+    $SUDO docker run -d --name mongodb -p 27017:27017 mongo:latest
 fi
+
+echo "Waiting for MongoDB to accept connections..."
+sleep 5
 
 echo "Installing dependencies..."
 if command -v poetry &> /dev/null; then
     poetry install
 else
     echo "Poetry not found. Please install poetry."
-    exit 1
 fi
 
 echo "Infrastructure setup complete."

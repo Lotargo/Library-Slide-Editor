@@ -1,0 +1,26 @@
+services:
+  db:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGO_URI=mongodb://db:27017
+    depends_on:
+      - db
+    volumes:
+      - ./media:/app/media
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py init_data &&
+             python manage.py runserver 0.0.0.0:8000"
+
+volumes:
+  mongo_data:

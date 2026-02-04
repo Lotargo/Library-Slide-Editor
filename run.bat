@@ -31,6 +31,16 @@ if exist poetry.lock (
     pip install django pymongo dnspython
 )
 
+REM Check MongoDB Connectivity
+echo Checking database connection...
+python -c "import socket; s = socket.socket(); s.settimeout(2); result = s.connect_ex(('localhost', 27017)); exit(result)"
+if %errorlevel% neq 0 (
+    echo Error: Could not connect to MongoDB at localhost:27017.
+    echo Please run setup_infra.bat to start the database.
+    pause
+    exit /b 1
+)
+
 REM Migrations
 echo Applying migrations...
 poetry run python manage.py migrate
