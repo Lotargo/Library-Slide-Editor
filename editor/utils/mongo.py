@@ -23,12 +23,17 @@ def get_fonts_collection():
 def serialize_doc(doc):
     if not doc:
         return None
-    doc['id'] = str(doc.pop('_id'))
-    if 'created_at' in doc and isinstance(doc['created_at'], datetime.datetime):
-        doc['created_at'] = doc['created_at'].isoformat()
-    if 'updated_at' in doc and isinstance(doc['updated_at'], datetime.datetime):
-        doc['updated_at'] = doc['updated_at'].isoformat()
-    return doc
+
+    # Create a copy to prevent mutating the original document
+    serialized = doc.copy()
+
+    if '_id' in serialized:
+        serialized['id'] = str(serialized.pop('_id'))
+    if 'created_at' in serialized and isinstance(serialized['created_at'], datetime.datetime):
+        serialized['created_at'] = serialized['created_at'].isoformat()
+    if 'updated_at' in serialized and isinstance(serialized['updated_at'], datetime.datetime):
+        serialized['updated_at'] = serialized['updated_at'].isoformat()
+    return serialized
 
 # Workspace Helpers
 def get_all_workspaces():

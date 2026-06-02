@@ -8,6 +8,7 @@ import { arrayMove } from '@dnd-kit/sortable';
 import { v4 as uuidv4 } from 'uuid';
 import FloatingMenu from '../components/FloatingMenu';
 import ContextMenu from '../components/ContextMenu';
+import { debounce } from '../utils/debounce';
 
 export default function PageEditor() {
     const { pageId } = useParams();
@@ -321,11 +322,3 @@ export default function PageEditor() {
     );
 }
 
-function debounce(func, wait) {
-    let timeout;
-    return function(...args) {
-        const context = this;
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(context, args), wait);
-    };
-}
