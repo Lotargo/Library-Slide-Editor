@@ -20,10 +20,7 @@ if %errorlevel% neq 0 (
 )
 
 echo Logging into Docker...
-echo dckr_pat_QdBDB82Cy_p0Ci_VzZhmidEe2_Q | docker login -u lotargo --password-stdin
-if %errorlevel% neq 0 (
-    echo Warning: Docker login failed. Proceeding anyway as image might be public or local...
-)
+REM If login is required for private images, rely on local docker config or pass credentials securely via environment variables.
 
 echo Starting MongoDB...
 docker pull mongo:latest
