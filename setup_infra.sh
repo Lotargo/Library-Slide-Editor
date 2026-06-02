@@ -20,8 +20,8 @@ if ! $SUDO docker info &> /dev/null; then
 fi
 
 echo "Logging into Docker..."
-# Use || true so login failure doesn't stop script (e.g. invalid creds but public image)
-echo "dckr_pat_QdBDB82Cy_p0Ci_VzZhmidEe2_Q" | $SUDO docker login -u lotargo --password-stdin || echo "Warning: Docker login failed."
+# If login is required for private images, rely on local docker config or pass credentials securely via environment variables.
+# e.g., echo "$DOCKER_PAT" | $SUDO docker login -u "$DOCKER_USER" --password-stdin
 
 echo "Starting MongoDB..."
 $SUDO docker pull mongo:latest
