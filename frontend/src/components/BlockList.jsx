@@ -5,6 +5,7 @@ import { Loader2 } from 'lucide-react';
 import BlockWrapper from './BlockWrapper';
 import { api } from '../api';
 import { serializeBlocks, parseBlockData } from '../utils/clipboardUtils';
+import ProgressBar from './ProgressBar';
 
 export default function BlockList({ blocks, onChange, listId = 'root' }) {
     const listRef = useRef(null);
@@ -231,30 +232,11 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
         setUploadProgress({ active: false, current: 0, total: 0, index: null });
     };
 
-    const ProgressBar = () => (
-        <div className="p-4 border border-blue-100 bg-blue-50/50 rounded-lg text-blue-700 flex items-center gap-3 animate-pulse my-2">
-            <Loader2 className="animate-spin" size={20} />
-            <div className="flex-1">
-                <div className="flex justify-between text-sm font-medium mb-1">
-                    <span>Uploading images...</span>
-                    <span>{uploadProgress.current} / {uploadProgress.total}</span>
-                </div>
-                <div className="h-1.5 bg-blue-200 rounded-full overflow-hidden">
-                    <div
-                        className="h-full bg-blue-500 transition-all duration-300 ease-out"
-                        style={{ width: `${(uploadProgress.current / uploadProgress.total) * 100}%` }}
-                    />
-                </div>
-            </div>
-        </div>
-    );
-
-
     if (!blocks || blocks.length === 0) {
         if (uploadProgress.active) {
              return (
                  <div className="py-2 px-2">
-                     <ProgressBar />
+                     <ProgressBar current={uploadProgress.current} total={uploadProgress.total} />
                  </div>
              );
         }
@@ -297,7 +279,7 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
                             )}
 
                             {uploadProgress.active && uploadProgress.index === idx && (
-                                <ProgressBar />
+                                <ProgressBar current={uploadProgress.current} total={uploadProgress.total} />
                             )}
 
                             <BlockWrapper
@@ -315,7 +297,7 @@ export default function BlockList({ blocks, onChange, listId = 'root' }) {
                     ))}
 
                     {uploadProgress.active && uploadProgress.index === blocks.length && (
-                        <ProgressBar />
+                        <ProgressBar current={uploadProgress.current} total={uploadProgress.total} />
                     )}
 
                     <div

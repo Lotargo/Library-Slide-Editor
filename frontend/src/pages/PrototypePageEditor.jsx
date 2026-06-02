@@ -4,6 +4,7 @@ import { api } from '../api';
 import VirtualizedBlockList from '../components/VirtualizedBlockList';
 import Toolbar from '../components/Toolbar';
 import { PageProvider } from '../contexts/PageContext';
+import { debounce } from '../utils/debounce';
 
 const EditorContent = ({ page, updateTitle }) => {
     // Header component for Virtuoso
@@ -70,11 +71,3 @@ export default function PrototypePageEditor() {
     );
 }
 
-function debounce(func, wait) {
-    let timeout;
-    return function(...args) {
-        const context = this;
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(context, args), wait);
-    };
-}
